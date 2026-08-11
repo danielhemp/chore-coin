@@ -27,6 +27,9 @@ pnpm-debug.log*
 *.swo
 *~
 
+# TypeScript incremental-compile cache
+*.tsbuildinfo
+
 # Logs & backups
 *.log
 *.orig
