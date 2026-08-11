@@ -137,12 +137,65 @@
       <div class="text-3xl mb-3">🔒</div>
       <h3 class="font-semibold text-lg">Your data, your server</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Every chore, every coin, every kid's name lives on hardware you
-        own. Single SQLite file, easy backups. Nothing phones home.
+        <span class="text-slate-100 font-medium">We never see your family's data.</span>
+        Not the kids' names, not their chores, not their coins. Everything
+        lives in a single SQLite file on hardware you own. Back it up,
+        move it, delete it — it's yours.
       </p>
     </div>
 
   </div>
+</section>
+
+<!-- ======================== DATA PRIVACY (the anchor promise) ================ -->
+<section class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
+  <div class="text-center max-w-3xl mx-auto">
+    <div class="text-5xl mb-4">🏠</div>
+    <h2 class="text-3xl sm:text-4xl font-bold">Your family's data. Full stop.</h2>
+    <p class="mt-6 text-lg text-slate-300">
+      Chore Coin runs on <span class="text-white font-semibold">your</span> Raspberry Pi
+      or <span class="text-white font-semibold">your</span> VPS.
+      Every chore, every coin, every kid's name lives in a single SQLite file
+      on hardware <span class="text-white font-semibold">you</span> control.
+    </p>
+  </div>
+
+  <div class="mt-14 grid gap-6 md:grid-cols-3">
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-2xl mb-3">🚫</div>
+      <h3 class="font-semibold">We never see it</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Chore Coin doesn't phone home. No telemetry, no analytics, no
+        "usage" pings. Our server doesn't know your kids exist.
+      </p>
+    </div>
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-2xl mb-3">📦</div>
+      <h3 class="font-semibold">One-click backup</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Download your whole family's data as a single file. Copy it to a
+        thumb drive, restore it on a new machine, done. No cloud
+        dependency, no vendor lock-in.
+      </p>
+    </div>
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-2xl mb-3">🔑</div>
+      <h3 class="font-semibold">License follows you</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Move to a bigger server? Release the license on the old machine,
+        activate it on the new one. Your $20 buys the software, not a
+        lease on the hardware it runs on.
+      </p>
+    </div>
+  </div>
+
+  <p class="mt-10 text-center text-sm text-slate-500 max-w-2xl mx-auto">
+    The only optional service that ever touches our servers is the $12/yr
+    subdomain add-on — and even then it's DNS-only. We create a
+    <code class="text-slate-300">yourname.chorecoin.family</code> record that points at
+    your instance. Your family's traffic goes directly from browser to
+    your server. We never proxy it.
+  </p>
 </section>
 
 <!-- ======================== HOW IT WORKS ======================== -->
@@ -231,34 +284,40 @@
 <!-- ======================== PRICING ======================== -->
 <section id="pricing" class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
   <h2 class="text-3xl sm:text-4xl font-bold text-center">Simple pricing</h2>
-  <p class="mt-4 text-center text-slate-400">One perpetual license. Updates included forever. No user seats, no per-kid fees.</p>
+  <p class="mt-4 text-center text-slate-400">Buy the software once. Move it to any machine, any time. Add the subdomain if you want a memorable URL.</p>
 
   <div class="mt-14 grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
 
-    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-8">
-      <div class="text-sm text-slate-400 uppercase tracking-wider">Free forever</div>
-      <div class="mt-2 text-4xl font-bold">$0</div>
-      <div class="text-sm text-slate-500">— self-host, unlimited use</div>
-      <ul class="mt-6 space-y-3 text-sm text-slate-300">
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> The full app, all features, all updates.</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Source code is public under BUSL 1.1.</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Community support via GitHub issues.</li>
-      </ul>
-      <a href="#install" class="mt-8 block text-center bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl px-5 py-3 font-medium">Install for free</a>
-    </div>
-
     <div class="bg-brand-900/30 border border-brand-700 rounded-2xl p-8 relative">
       <div class="absolute -top-3 right-4 bg-brand-600 text-xs font-medium px-2 py-1 rounded-full">Coming soon</div>
-      <div class="text-sm text-brand-300 uppercase tracking-wider">Family subdomain</div>
-      <div class="mt-2 text-4xl font-bold">$12<span class="text-lg font-normal text-slate-400">/year</span></div>
+      <div class="text-sm text-brand-300 uppercase tracking-wider">Chore Coin</div>
+      <div class="mt-2 text-4xl font-bold">$20<span class="text-lg font-normal text-slate-400"> once</span></div>
+      <div class="text-sm text-slate-400">— perpetual license, all future updates free</div>
+      <ul class="mt-6 space-y-3 text-sm text-slate-300">
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> The full app, no feature gates.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Every future update, forever. In-app notifier tells you when a new version ships.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Move your license between machines: release on the old server, activate on the new one.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> One-click full-family backup + restore.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> BUSL 1.1 source-visible. Read it, audit it, modify it for personal use.</li>
+      </ul>
+      <button disabled class="mt-8 block w-full text-center bg-slate-800/50 border border-slate-700 rounded-xl px-5 py-3 font-medium text-slate-500 cursor-not-allowed">Not yet on sale</button>
+      <p class="mt-3 text-xs text-slate-500 text-center">Free during v0 — <a href="#install" class="underline">install today for $0</a>.</p>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 relative">
+      <div class="absolute -top-3 right-4 bg-slate-700 text-xs font-medium px-2 py-1 rounded-full">Optional add-on</div>
+      <div class="text-sm text-slate-400 uppercase tracking-wider">Family subdomain</div>
+      <div class="mt-2 text-4xl font-bold">+$12<span class="text-lg font-normal text-slate-400">/year</span></div>
       <div class="text-sm text-slate-400">— e.g. <code class="text-slate-300">smiths.chorecoin.family</code></div>
       <ul class="mt-6 space-y-3 text-sm text-slate-300">
         <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> A memorable URL your family can bookmark forever.</li>
         <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Point it at your home instance (Cloudflare Tunnel) or your VPS.</li>
         <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> HTTPS with a real cert — no browser warnings.</li>
         <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> DNS-only — your data never touches our infrastructure.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Cancel anytime. Point your subdomain elsewhere, or just keep using an IP.</li>
       </ul>
       <button disabled class="mt-8 block w-full text-center bg-slate-800/50 border border-slate-700 rounded-xl px-5 py-3 font-medium text-slate-500 cursor-not-allowed">Not available yet</button>
+      <p class="mt-3 text-xs text-slate-500 text-center">Requires an active Chore Coin license.</p>
     </div>
 
   </div>
@@ -333,6 +392,39 @@
         <a href="https://github.com/danielhemp/chore-coin" class="text-brand-400 underline">GitHub</a>.
         This is a side project maintained in evenings — response times
         are days, not minutes.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-lg">What if I want to move to a new machine?</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Two clicks. On the old machine: Settings → Download family backup. On
+        the new machine: install Chore Coin, and during the setup wizard
+        choose "Restore from backup" instead of "Fresh install." Your kids,
+        chores, coin balances, and full history come across intact. Then
+        release the license on the old machine and enter it on the new one
+        — same button, one paste.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-lg">Can I use my license on more than one server?</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        One license = one active install. If you want a second family (say,
+        grandparents), buy a second license. If you want to upgrade
+        hardware, release the license on the old machine first; the new
+        one activates immediately. Nothing to email us, no support tickets.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-lg">How do I know when there's an update?</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        The app polls a public announcements feed weekly and shows an
+        in-app banner when there's news — new versions, security notices,
+        breaking changes. No spam, no marketing. Everything else you can
+        watch on
+        <a href="https://github.com/danielhemp/chore-coin/releases" class="text-brand-400 underline">the GitHub releases page</a>.
       </p>
     </div>
 
