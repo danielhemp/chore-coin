@@ -42,7 +42,7 @@ services:
 
   chore-coin:
     build:
-      context: .
+      context: ./frontend
       args:
         VITE_PB_URL: "/"
         VITE_LOCAL_TIMEZONE: ${VITE_LOCAL_TIMEZONE:-America/Chicago}
