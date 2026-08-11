@@ -1,0 +1,62 @@
+# CI — build and smoke-test on every push to main and every PR.
+# Runs the same `make build` a developer would run locally, then boots the
+# resulting binary against a scratch data dir and confirms /api/health.
+# Kept fast (~2 min) so it's a useful pre-merge signal, not a chore.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & smoke-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: make build (frontend + binary)
+        run: make build
+
+      - name: Smoke test — binary starts and API responds
+        run: |
+          mkdir -p /tmp/ci-data
+          ./bin/chorecoin serve --http=127.0.0.1:18099 --dir=/tmp/ci-data &
+          BIN_PID=$!
+          # Give it up to 15s to boot
+          for i in $(seq 1 15); do
+            if curl -sf http://127.0.0.1:18099/api/health >/dev/null 2>&1; then
+              echo "ok: bound and healthy after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+          # Health probe
+          curl -sf http://127.0.0.1:18099/api/health | tee /dev/stderr | grep -q '"code":200'
+          # Frontend probe — root should serve the PWA index.html
+          curl -sf http://127.0.0.1:18099/ | grep -q '<div id="root">'
+          # SPA fallback probe — unknown path returns index.html
+          curl -sf http://127.0.0.1:18099/kids/xyz | grep -q '<div id="root">'
+          kill $BIN_PID
+          echo "smoke test passed"
