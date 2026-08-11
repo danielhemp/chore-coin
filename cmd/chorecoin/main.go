@@ -1,18 +1,18 @@
 // Package main is the chorecoin binary — a custom PocketBase build with the
-// JS hooks and migrations embedded at compile time so the binary is fully
-// self-contained. On startup it extracts the embedded assets to the user's
-// OS cache directory (e.g. ~/Library/Caches/chorecoin on macOS, ~/.cache/
-// chorecoin on Linux) and hands those paths to the JSVM plugin.
+// JS hooks, JS migrations, and built PWA frontend all embedded at compile
+// time. The binary is fully self-contained: drop it on a Mac, Linux server,
+// or Raspberry Pi and `chorecoin serve` runs the entire app on a single
+// port with no external files.
 //
-// Env overrides for development:
+// Env overrides for local dev (bypass embedded copies to iterate without
+// rebuilding the binary):
 //
-//	CHORECOIN_HOOKS_DIR       — skip embedded extraction, load hooks from here
-//	CHORECOIN_MIGRATIONS_DIR  — skip embedded extraction, load migrations from here
+//	CHORECOIN_HOOKS_DIR       — load hooks from this on-disk dir instead
+//	CHORECOIN_MIGRATIONS_DIR  — load migrations from this on-disk dir instead
 //
-// Both are useful when iterating on JS locally against a checked-out repo:
-//
-//	CHORECOIN_HOOKS_DIR=./pb_hooks CHORECOIN_MIGRATIONS_DIR=./pb_migrations \
-//	  ./bin/chorecoin serve --http=127.0.0.1:18090 --dir=/tmp/chorecoin-dev
+// The frontend is always served from the embedded FS — for local frontend
+// dev use `npm run dev` in the frontend/ directory (Vite dev server on 5173)
+// while pointing VITE_PB_URL at your chorecoin serve URL.
 package main
 
 import (
@@ -22,6 +22,8 @@ import (
 
 	chorecoin "github.com/danielhemp/chore-coin"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/apis"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/jsvm"
 )
 
@@ -32,9 +34,23 @@ func main() {
 	}
 
 	app := pocketbase.New()
+
 	jsvm.MustRegister(app, jsvm.Config{
 		HooksDir:      hooksDir,
 		MigrationsDir: migrationsDir,
+	})
+
+	// Serve the embedded PWA frontend with SPA fallback (unknown paths return
+	// index.html so React Router handles client-side routing). Registered on
+	// /* which is the least-specific pattern — PocketBase's own /api/* and
+	// /_/* routes take priority because Echo matches more-specific first.
+	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		// StaticDirectoryHandler(fs, indexFallback=true):
+		//   - Serves any file that exists in the FS (with correct content-type).
+		//   - Falls back to serving index.html for anything that doesn't exist,
+		//     letting the SPA router handle client-side paths like /approvals.
+		e.Router.GET("/*", apis.StaticDirectoryHandler(chorecoin.FrontendFS(), true))
+		return nil
 	})
 
 	if err := app.Start(); err != nil {
@@ -43,12 +59,9 @@ func main() {
 }
 
 // resolveAssetDirs picks the on-disk locations of pb_hooks and pb_migrations
-// that jsvm will load. Precedence:
-//  1. CHORECOIN_HOOKS_DIR / CHORECOIN_MIGRATIONS_DIR env vars (dev use — bypass
-//     the embedded copy so you can edit JS in-place without rebuilding).
-//  2. Extract the embedded copies to $XDG_CACHE_HOME/chorecoin/assets/{hooks,
-//     migrations} (or the OS equivalent) on every startup — idempotent and
-//     costs a handful of ms.
+// that jsvm will load. Env vars take precedence (for local dev); otherwise
+// extract the embedded copies to the OS cache dir on every startup — cheap
+// and idempotent.
 func resolveAssetDirs() (hooksDir, migrationsDir string, err error) {
 	if h := os.Getenv("CHORECOIN_HOOKS_DIR"); h != "" {
 		hooksDir = h
