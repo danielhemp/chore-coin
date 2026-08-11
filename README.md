@@ -1,165 +1,153 @@
 # Chore Coin
 
-A tiny family PWA for tracking chores and paying kids in coins. Runs entirely on your Docker host — no third-party accounts, no cloud dependencies. Install it to the home screen on any phone, iPad, or laptop.
+A tiny self-hosted PWA that turns kids' chores into a working economy: base
+chores earn daily screen time, bonus chores earn coins, and coins redeem for
+extra screen time, cash, or parent-approved rewards like "movie night." Every
+device in the family stays in sync in real time. Runs on a Mac mini, a Linux
+VPS, or a $15 Raspberry Pi Zero 2W.
 
-**What it does**
+**Status: v0 — active development.** The current family-tested build ships as
+Docker Compose. A single-binary distribution for macOS, Linux (including
+Raspberry Pi), and eventually Windows is under active development in
+`cmd/chorecoin/`. The intent is a paid v1 with signed license keys, at-cost
+domain redirects, and marketing at [chorecoin.app](https://chorecoin.app)
+(coming soon).
 
-- Two-tier reward economy:
-  - **Base chores** (per kid, editable) → finish them all today to earn **1 hour of screen time**. Use-it-or-lose-it by default; parents can extend, carry over, or grant bonuses.
-  - **Bonus chores** → earn **chore coins**. Each coin redeems for 5 min extra screen time OR $0.25 cash.
-- Kids check off chores → parent approves in a queue → balance updates in real time on every device.
-- Immutable append-only ledger records every earn/spend so history is always auditable.
+## What it does
 
-**Stack — 100% self-hosted**
+- **Two-tier economy.** Base chores (a fixed daily set) unlock 60 minutes of
+  screen time if all are completed. Bonus chores earn coins. 1 coin = 5 min
+  extra screen time OR $0.25 in cash OR the coin cost of a parent-defined
+  reward.
+- **Reward catalog.** Parents pre-define rewards like "Movie night — 10 coins"
+  or "Pick dinner — 15 coins." Kids request; parents approve from an inbox
+  that unifies chores and reward requests.
+- **Immutable ledger.** Every earn, spend, and adjustment is a signed row in
+  an append-only ledger. Full history, always auditable.
+- **Real-time everywhere.** Approve a chore on your phone; the kid's iPad
+  updates within a second, and the family wall dashboard reflects the new
+  balance instantly. Web Push notifies parents of pending approvals and kids
+  of approvals/denials.
+- **Fully self-hosted.** All data in a single SQLite file. Behind a Cloudflare
+  Tunnel if you want the family to reach it from anywhere without opening a
+  port on your router.
 
-- **Frontend:** Vite + React + TypeScript + Tailwind, packaged as a PWA (`vite-plugin-pwa`), served by nginx.
-- **Backend:** PocketBase — a single Go binary that provides auth, realtime subscriptions (SSE), and per-collection access rules. Data lives in a single SQLite file (`pb_data/data.db`).
-- **Deployment:** Two containers via `docker compose` (`pocketbase` + `chore-coin`), one named volume for the DB. Put it behind Cloudflare on your family domain.
+## Installation
 
----
+### Option 1 — Docker Compose (current stable path)
 
-## 1. First-time setup
-
-Clone/extract this project onto your Docker host and, from the project root:
+Requires Docker Desktop or Docker Engine. This is what the reference family
+instance runs.
 
 ```bash
-cp .env.example .env   # optional; only needed to change the default timezone
-docker compose build
+git clone https://github.com/danielhemp/chore-coin.git
+cd chore-coin
+cp .env.example .env         # edit if you want a different timezone
 docker compose up -d
 ```
 
-The app is now on `http://<host>:8080`. Health-check the backend with
-`curl http://<host>:8080/api/health` — you should see `{"code":200,...}`.
-
-The very first boot runs `pb_migrations/1700000000_init.js` which creates every collection with rules. Subsequent starts are no-ops.
-
-### Create the PocketBase superuser (admin)
-
-PocketBase needs a superuser account so you can open the admin UI. Run once:
+Open `http://localhost:8080` and follow the setup instructions. Create the
+initial superuser with:
 
 ```bash
-docker compose exec pocketbase /pb/pocketbase admin create you@example.com 'SomeStrongPassword'
+docker compose exec pocketbase /pb/pocketbase admin create you@example.com 'ChangeMe'
 ```
 
-If you see `Error: Migration are not initialized yet` from `admin create`, your build predates the WORKDIR fix — append `--dir=/pb_data` to the command, or rebuild the pocketbase image with the latest Dockerfile (which sets `/pb_data` as the container's working directory).
+Then sign into the admin UI at `/_/`, create your first parent record in the
+`users` collection (`role=parent`), and log into the app.
 
-Now you can log in at `http://<host>:8080/_/` — this is PocketBase's built-in admin UI. Use it for:
+### Option 2 — Native binary from source (developer path)
 
-- Manually seeding data if needed
-- Editing PB settings (SMTP for password-reset emails, etc.)
-- Backups: `Settings → Backups`
-
-### Create the first parent user
-
-The app itself has no self-signup — parents create every login through the admin UI (or the "Add kid" screen once a parent is signed in).
-
-Two ways:
-
-1. **In the admin UI** — go to Collections → `users` → New record. Fill in `email`, `password`, `role=parent`, `displayName`, then Save.
-2. **Via API** with your admin token — see `docs/api-cheatsheet.md` if you want to script it (not included; use the UI first time).
-
-Sign into the app at `http://<host>:8080/login` with that parent email + password. From there you can add kids, base chores, and bonus chores through the app UI.
-
-### Adding kid logins
-
-On the parent "Manage kids" screen, add a kid and optionally fill in an email + password to create their login at the same time. Kids can then sign into the app on their own devices.
-
-If you leave the login blank at creation time (e.g. the kid is too young), you can add it later via the PocketBase admin UI: create a `users` record with `role=kid` and set its `kidId` to the kid's ID (visible in the kid detail URL: `/kids/<id>`).
-
----
-
-## 2. Everyday use
-
-- **Kid view** — Chores tab shows today's base chores (tap "I did it!" to submit for approval) and available bonus chores. Redeem tab spends coins for screen minutes or cash.
-- **Parent view** — Home shows every kid at a glance. Approve tab burns down the queue. Chores tab manages the bonus catalog. Redeem tab shows outstanding cash owed. History tab is the full ledger.
-- Every action is realtime — approve on your phone, the kid's iPad updates instantly.
-
----
-
-## 3. Deploying behind Cloudflare
-
-You have two natural options:
-
-**Same-origin (recommended, no config needed)** — expose `http://<host>:8080` through a Cloudflare Tunnel or DNS record on `chores.family.tld`. The frontend talks to `/api/*` on the same origin, and nginx (inside the `chore-coin` container) reverse-proxies to the PocketBase container. Nothing else to set up.
-
-**Split origins (optional)** — if you'd rather serve the API from a separate subdomain (e.g. `chores.family.tld` and `chores-api.family.tld`), set `VITE_PB_URL=https://chores-api.family.tld` in `.env`, rebuild, and expose the PocketBase container's 8090 directly to a separate tunnel/DNS record.
-
----
-
-## 4. Backups
-
-The SQLite DB is a single file inside the `pb_data` volume. To back up:
+Requires Go 1.22+ and Node 20+. Produces a single self-contained
+`chorecoin` binary per platform.
 
 ```bash
-# Trigger a PB backup (goes into pb_data/backups/)
-docker compose exec pocketbase /pb/pocketbase --dir=/pb_data admin
+git clone https://github.com/danielhemp/chore-coin.git
+cd chore-coin
 
-# Or copy the DB straight out:
-docker cp chore-coin-pocketbase:/pb_data/data.db ./backups/data-$(date +%F).db
+# Build the frontend once
+(cd frontend && npm ci && npm run build)
+
+# Build the binary for your host
+make build
+
+# Run against a scratch data dir
+./bin/chorecoin serve --http=127.0.0.1:8090 --dir=/tmp/chorecoin-dev
 ```
 
-You can also schedule PB backups from the admin UI's Settings → Backups tab, and configure S3 for offsite storage if you like.
-
----
-
-## 5. Local development
-
-Requires Node 22+ and PocketBase (grab it from https://pocketbase.io/docs/).
+Cross-compile all release targets (macOS arm64/amd64, Linux
+arm64/amd64/armv7):
 
 ```bash
-# Terminal 1 — run PocketBase locally
-./pocketbase serve --dir=./pb_data --migrationsDir=./pb_migrations --hooksDir=./pb_hooks
-
-# Terminal 2 — run the dev server
-cp .env.example .env.local
-echo 'VITE_PB_URL=http://localhost:8090' >> .env.local
-npm install
-npm run dev
+make release
+ls -lh bin/
 ```
 
-Vite serves at http://localhost:5173.
+Binaries are statically linked (`CGO_ENABLED=0`, pure-Go SQLite driver) — no
+libc dependency, ~40MB each.
 
----
+### Option 3 — Prebuilt binary (coming with v1)
 
-## 6. Customization
+A one-line installer for macOS + Linux (including Raspberry Pi) is planned:
 
-- **Change coin value**: edit `COIN_TO_CENTS` and `COIN_TO_SCREEN_MINUTES` in both `src/lib/types.ts` and `pb_hooks/lib.js`, then rebuild + restart.
-- **Change base-chore reward from 60 min**: edit `BASE_REWARD_MINUTES` in the same two files.
-- **Change local timezone**: `VITE_LOCAL_TIMEZONE` in `.env`.
+```bash
+curl -fsSL https://chorecoin.app/install.sh | sh
+```
 
----
+Detects your OS/arch, drops the right binary in `/usr/local/bin/chorecoin`,
+registers a systemd/launchd service, and opens the setup wizard in your
+browser. Not shipped yet — track progress at
+[chorecoin.app](https://chorecoin.app) or in
+[build-state](https://github.com/danielhemp/chore-coin/issues).
+
+## Configuration
+
+The Docker path reads a `.env` file at the repo root. The native binary
+reads environment variables directly.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `VITE_LOCAL_TIMEZONE` | `America/Chicago` | Used to compute daily boundaries for base-chore reset |
+| `WEBPUSH_VAPID_PUBLIC_KEY` | — | Generated with `docker compose run --rm webpush npm run generate-vapid` |
+| `WEBPUSH_VAPID_PRIVATE_KEY` | — | Same command; keep private |
+| `WEBPUSH_VAPID_SUBJECT` | `mailto:admin@chorecoin.local` | Contact for browser push registries |
+| `WEBPUSH_SHARED_SECRET` | — | Random 64-hex string; ties PocketBase to the webpush sidecar |
+| `CHORECOIN_HOOKS_DIR` | `./pb_hooks` | Native binary only — override for testing |
+| `CHORECOIN_MIGRATIONS_DIR` | `./pb_migrations` | Native binary only — override for testing |
 
 ## Project layout
 
 ```
-src/
-  auth/AuthContext.tsx      — pb.authStore integration
-  lib/types.ts              — TypeScript mirrors of the PB collections
-  lib/actions.ts            — every mutation (direct CRUD OR custom /api/custom/*)
-  lib/dates.ts              — local-timezone-aware date helpers
-  hooks/data.ts             — live-subscription React hooks over PB realtime
-  components/Layout.tsx     — shell with bottom tab bar
-  pages/Login.tsx           — email/password sign-in
-  pages/kid/                — kid views (home + redeem)
-  pages/parent/             — parent views (dashboard, approvals, kid detail, chore editors, redemptions, history)
-pb_migrations/1700000000_init.js — creates every collection + rules on first boot
-pb_hooks/main.pb.js         — atomic multi-record mutations (approve/redeem/adjust/…)
-pb_hooks/lib.js             — helper functions shared across the route handlers
-Dockerfile                  — frontend (multi-stage: node → nginx)
-Dockerfile.pocketbase       — backend (pinned PocketBase binary in alpine)
-docker-compose.yml          — two services, one volume
-nginx.conf                  — SPA fallback + reverse proxy for /api and /_/
+chore-coin/
+├── frontend/           Vite + React + Tailwind PWA
+├── cmd/chorecoin/      Go main package — custom PocketBase build
+├── pb_hooks/           PocketBase JS hooks (approve, redeem, invite kid, ...)
+├── pb_migrations/      PB schema migrations
+├── webpush/            Node sidecar that signs + delivers Web Push
+├── docker-compose.yml  Three-container reference deployment
+├── Dockerfile.pocketbase
+├── Makefile            make build | make release | make run
+└── go.mod / go.sum
 ```
 
-## Data model at a glance
+## License
 
-```
-users            (auth)  role, displayName, kidId, avatarEmoji
-kids                     displayName, avatarEmoji, userId, active
-base_chores              kidId, title, order, active
-bonus_chores             title, coinValue, assignedTo, recurring, active
-completions              kidId, choreType, choreId, choreTitle, coinValue?, forDate?, status, approvedBy?, approvedAt?
-daily_status             kidId, date, approvedBaseChores (map), baseAwarded, baseScreenTimeGrantedMinutes, baseScreenTimeUsedMinutes, carryOverMinutes
-balances                 kidId (unique), coinBalance
-ledger                   kidId, type, amount, note, refId, by
-```
+[Business Source License 1.1](./LICENSE) — copyright © 2026 Daniel Hemphill.
+
+- **Free to use** for the internal operations of a single family, household,
+  or non-commercial group.
+- **Commercial use** — including offering Chore Coin as a hosted or managed
+  service, or bundling it into a paid product — requires a separate
+  commercial license from the author.
+- **Change license**: this code automatically converts to
+  [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) four
+  years after each version's public release.
+
+For commercial licensing inquiries, contact
+[daniel@turnersystems.com](mailto:daniel@turnersystems.com).
+
+## Support
+
+File issues at
+[github.com/danielhemp/chore-coin/issues](https://github.com/danielhemp/chore-coin/issues).
+This is a side project maintained in evenings; responses may take a few days.
