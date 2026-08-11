@@ -61,6 +61,118 @@ routerAdd('GET', '/api/custom/push-vapid-key', (c) => {
   return c.json(200, { key })
 })
 
+// -----------------------------------------------------------------------------
+// First-run setup wizard endpoints.
+// -----------------------------------------------------------------------------
+
+// GET /api/custom/setup-status  →  { needsSetup: bool }  (unauth, public)
+// The frontend polls this on startup. If needsSetup=true it renders the
+// setup wizard instead of the normal login page. Setup is considered
+// complete once ANY user with role="parent" exists in the users collection.
+routerAdd('GET', '/api/custom/setup-status', (c) => {
+  let needsSetup = true
+  try {
+    const parents = $app.dao().findRecordsByFilter(
+      'users',
+      'role = "parent"',
+      '',
+      1,
+      0,
+    )
+    needsSetup = parents.length === 0
+  } catch (_e) {
+    // On any error assume setup is incomplete so the wizard can try again.
+    needsSetup = true
+  }
+  return c.json(200, { needsSetup })
+})
+
+// POST /api/custom/setup  { adminEmail, adminPassword, parentEmail,
+//                          parentPassword, parentName, avatarEmoji?, timezone? }
+//
+// One-shot bootstrap: creates the PocketBase superuser (for /_/ admin UI)
+// AND the first parent user (for the app), atomically. Refuses to run if
+// any parent user already exists — the endpoint locks itself the moment
+// setup is complete.
+//
+// Unauth on purpose: the whole point is that new self-hosters can complete
+// this from the browser without ever touching a terminal.
+routerAdd('POST', '/api/custom/setup', (c) => {
+  const { requireBody } = require(`${__hooks}/lib.js`)
+  const body = requireBody(c, {
+    adminEmail: '',
+    adminPassword: '',
+    parentEmail: '',
+    parentPassword: '',
+    parentName: '',
+    avatarEmoji: '',
+    timezone: '',
+  })
+
+  // Refuse if setup already completed.
+  const existingParents = $app.dao().findRecordsByFilter(
+    'users',
+    'role = "parent"',
+    '',
+    1,
+    0,
+  )
+  if (existingParents.length > 0) {
+    throw new BadRequestError('Setup has already been completed on this server.')
+  }
+
+  // Basic validation (frontend also validates, but never trust it).
+  if (!body.adminEmail || !body.adminPassword) {
+    throw new BadRequestError('Admin email and password are required.')
+  }
+  if (!body.parentEmail || !body.parentPassword) {
+    throw new BadRequestError('Parent email and password are required.')
+  }
+  if (!body.parentName) {
+    throw new BadRequestError('Parent display name is required.')
+  }
+  if (body.adminPassword.length < 10) {
+    throw new BadRequestError('Admin password must be at least 10 characters.')
+  }
+  if (body.parentPassword.length < 8) {
+    throw new BadRequestError('Parent password must be at least 8 characters.')
+  }
+
+  $app.dao().runInTransaction((txDao) => {
+    // 1) Superuser (PocketBase admin) — accesses /_/ admin UI.
+    const admin = new Admin()
+    admin.email = body.adminEmail
+    admin.setPassword(body.adminPassword)
+    txDao.saveAdmin(admin)
+
+    // 2) First parent user — logs into the app itself.
+    // Our users collection allows username-based auth, so every record needs
+    // a username. Derive one from the local-part of the email, plus a
+    // random suffix to guarantee uniqueness. Users log in with either the
+    // email or the generated username.
+    const emailLocal = String(body.parentEmail)
+      .split('@')[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '_')
+    const username = emailLocal + '_' + $security.randomString(6).toLowerCase()
+
+    const usersCol = txDao.findCollectionByNameOrId('users')
+    const parent = new Record(usersCol, {
+      username,
+      email: body.parentEmail,
+      role: 'parent',
+      displayName: body.parentName,
+      avatarEmoji: body.avatarEmoji || '👤',
+      emailVisibility: false,
+      verified: true,
+    })
+    parent.setPassword(body.parentPassword)
+    txDao.saveRecord(parent)
+  })
+
+  return c.json(200, { ok: true })
+})
+
 // POST /api/custom/push-subscribe  { endpoint, p256dh, auth, userAgent? }
 routerAdd('POST', '/api/custom/push-subscribe', (c) => {
   const { requireBody, findOrNull } = require(`${__hooks}/lib.js`)

@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
-import { pb } from './pb'
+import { pb, callCustom } from './pb'
 import Login from './pages/Login'
+import Setup from './pages/Setup'
 import KidHome from './pages/kid/KidHome'
 import KidRedeem from './pages/kid/KidRedeem'
 import ParentDashboard from './pages/parent/ParentDashboard'
@@ -28,8 +30,31 @@ function LoadingScreen() {
 
 export default function App() {
   const { user, loading } = useAuth()
+  // Setup-wizard gate. null = still checking, true = show wizard, false = normal flow.
+  const [needsSetup, setNeedsSetup] = useState<boolean | null>(null)
 
-  if (loading) return <LoadingScreen />
+  useEffect(() => {
+    let cancelled = false
+    callCustom<{ needsSetup: boolean }>('setup-status')
+      .then((r) => {
+        if (!cancelled) setNeedsSetup(!!r.needsSetup)
+      })
+      .catch(() => {
+        // If the endpoint isn't reachable (older backend, network blip),
+        // fall back to the normal login flow — old family instances stay
+        // functional even if they haven't picked up the new hook yet.
+        if (!cancelled) setNeedsSetup(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (loading || needsSetup === null) return <LoadingScreen />
+
+  if (needsSetup) {
+    return <Setup onDone={() => setNeedsSetup(false)} />
+  }
 
   if (!user) {
     return (
