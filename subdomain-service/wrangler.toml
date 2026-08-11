@@ -1,0 +1,34 @@
+# Cloudflare Worker config for the Chore Coin subdomain service.
+#
+# Before deploying: create a KV namespace and paste its ID below.
+#   wrangler kv:namespace create SUBDOMAINS
+#   wrangler kv:namespace create SUBDOMAINS --preview  (for local dev)
+#
+# Then set the runtime secrets:
+#   wrangler secret put CLOUDFLARE_API_TOKEN
+#   wrangler secret put FAMILY_ZONE_ID
+#   wrangler secret put LICENSE_PUBLIC_KEY   # optional; set once license issuance is live
+#
+# Deploy: `wrangler deploy` — pushes worker.js + this config to Cloudflare.
+
+name = "chorecoin-subdomains"
+main = "worker.js"
+compatibility_date = "2025-05-01"
+
+# Bind the KV namespace to `env.SUBDOMAINS` in worker code. Fill in the id
+# printed by `wrangler kv:namespace create SUBDOMAINS`.
+[[kv_namespaces]]
+binding = "SUBDOMAINS"
+id = "TODO_REPLACE_WITH_KV_NAMESPACE_ID"
+preview_id = "TODO_REPLACE_WITH_KV_PREVIEW_NAMESPACE_ID"
+
+# Route the Worker at a memorable URL under chorecoin.family. Uncomment and
+# fill in the zone_id once the domain lives on Cloudflare:
+# [[routes]]
+# pattern = "subdomains.chorecoin.family/*"
+# zone_id = "TODO_REPLACE_WITH_ZONE_ID"
+# custom_domain = true
+
+# Local development
+[dev]
+port = 8787
