@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1.7
+#
+# Pinned PocketBase build. Downloads the official release binary directly
+# so we're not depending on a community-maintained image.
+
+FROM alpine:3.20
+ARG PB_VERSION=0.22.24
+ARG TARGETARCH
+
+RUN apk add --no-cache ca-certificates wget unzip \
+    && mkdir /pb
+
+WORKDIR /pb
+RUN case "$TARGETARCH" in \
+      amd64) PB_ARCH=amd64 ;; \
+      arm64) PB_ARCH=arm64 ;; \
+      *) echo "Unsupported arch: $TARGETARCH"; exit 1 ;; \
+    esac \
+ && wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_${PB_ARCH}.zip" \
+ && unzip -q "pocketbase_${PB_VERSION}_linux_${PB_ARCH}.zip" \
+ && rm "pocketbase_${PB_VERSION}_linux_${PB_ARCH}.zip"
+
+# Making /pb_data the working directory means any `pocketbase` command run via
+# `docker compose exec` (e.g. `admin create`) defaults to the right data dir
+# without needing an explicit --dir flag.
+WORKDIR /pb_data
+
+# pb_migrations and pb_hooks are bind-mounted from the repo so edits don't
+# require an image rebuild. pb_data is a named volume (see docker-compose.yml).
+VOLUME ["/pb_data"]
+EXPOSE 8090
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -q -O- http://127.0.0.1:8090/api/health >/dev/null || exit 1
+
+CMD ["/pb/pocketbase", "serve", \
+     "--http=0.0.0.0:8090", \
+     "--dir=/pb_data", \
+     "--migrationsDir=/pb_migrations", \
+     "--hooksDir=/pb_hooks"]

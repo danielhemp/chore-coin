@@ -1,0 +1,59 @@
+services:
+  pocketbase:
+    build:
+      context: .
+      dockerfile: Dockerfile.pocketbase
+    image: chore-coin-pocketbase:latest
+    container_name: chore-coin-pocketbase
+    restart: unless-stopped
+    environment:
+      # --- ntfy (optional, keep or remove; harmless if left blank) -----------
+      NTFY_URL: ${NTFY_URL:-https://ntfy.sh}
+      NTFY_TOPIC: ${NTFY_TOPIC:-}
+      NTFY_TOKEN: ${NTFY_TOKEN:-}
+      # --- Web Push (native PWA notifications) ------------------------------
+      # Frontend fetches this via /api/custom/push-vapid-key to subscribe.
+      WEBPUSH_VAPID_PUBLIC_KEY: ${WEBPUSH_VAPID_PUBLIC_KEY:-}
+      # PB → webpush sidecar. In-network URL; not exposed on the host.
+      WEBPUSH_URL: ${WEBPUSH_URL:-http://webpush:3000}
+      # Optional shared secret between PB and the sidecar; matches WEBPUSH_SHARED_SECRET on the webpush service.
+      WEBPUSH_SHARED_SECRET: ${WEBPUSH_SHARED_SECRET:-}
+    volumes:
+      - pb_data:/pb_data
+      - ./pb_migrations:/pb_migrations:ro
+      - ./pb_hooks:/pb_hooks:ro
+    expose:
+      - "8090"
+
+  webpush:
+    build:
+      context: ./webpush
+      dockerfile: Dockerfile
+    image: chore-coin-webpush:latest
+    container_name: chore-coin-webpush
+    restart: unless-stopped
+    environment:
+      VAPID_PUBLIC_KEY: ${WEBPUSH_VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${WEBPUSH_VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${WEBPUSH_VAPID_SUBJECT:-mailto:admin@chorecoin.local}
+      WEBPUSH_SHARED_SECRET: ${WEBPUSH_SHARED_SECRET:-}
+    expose:
+      - "3000"
+
+  chore-coin:
+    build:
+      context: .
+      args:
+        VITE_PB_URL: "/"
+        VITE_LOCAL_TIMEZONE: ${VITE_LOCAL_TIMEZONE:-America/Chicago}
+    image: chore-coin:latest
+    container_name: chore-coin
+    restart: unless-stopped
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+
+volumes:
+  pb_data:

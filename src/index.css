@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    overscroll-behavior-y: contain;
+  }
+  /* Larger touch targets on iPad/Android */
+  button,
+  a,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-medium
+           transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500
+           active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+  }
+  .btn-secondary {
+    @apply btn bg-slate-800 text-slate-100 hover:bg-slate-700;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+  .btn-success {
+    @apply btn bg-emerald-600 text-white hover:bg-emerald-700;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-slate-200 hover:bg-slate-800;
+  }
+  .card {
+    @apply rounded-2xl bg-slate-900 border border-slate-800 p-4 shadow-lg;
+  }
+  .input {
+    @apply w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-3 text-slate-100
+           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full bg-slate-800 px-3 py-1 text-sm text-slate-200;
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* When the app runs installed to the home screen or inside iOS 26 Assistive
+ * Access Simple Web, our own top chrome (logo + "Sign out") is redundant
+ * because iOS is already framing the app. Compact the header: hide the
+ * branding, keep a tiny "Sign out" chip so a parent can still recover the
+ * session on their own installed copy, and drop the padding to the safe area
+ * only. Toggled via the .installed-webapp class set in src/main.tsx.
+ *
+ * Force it on for a specific device by appending ?kiosk=1 to the URL you
+ * configure as the Simple Web target — useful when Simple Web's WKWebView
+ * doesn't advertise standalone display-mode. */
+html.installed-webapp .app-header {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: 0.15rem;
+  border-bottom: 0;
+}
+html.installed-webapp .app-header-brand {
+  display: none;
+}
+html.installed-webapp .app-header .text-sm {
+  font-size: 0.7rem;
+}

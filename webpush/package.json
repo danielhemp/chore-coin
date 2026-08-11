@@ -1,0 +1,13 @@
+{
+  "name": "chore-coin-webpush",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "generate-vapid": "node --input-type=module -e \"import w from 'web-push'; const k = w.generateVAPIDKeys(); console.log('VAPID_PUBLIC_KEY='+k.publicKey); console.log('VAPID_PRIVATE_KEY='+k.privateKey);\""
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}
