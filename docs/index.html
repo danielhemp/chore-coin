@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-slate-950 text-slate-100 scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chore Coin — a family chore + reward tracker you self-host</title>
+<meta name="description" content="A tiny self-hosted PWA that turns kids' chores into a working economy. Base chores earn screen time, bonus chores earn coins, coins redeem for cash, screen time, or parent-approved rewards. Runs on a Raspberry Pi.">
+<meta property="og:title" content="Chore Coin — a family chore + reward tracker you self-host">
+<meta property="og:description" content="Base chores earn screen time. Bonus chores earn coins. Coins redeem for cash, screen time, or rewards. Fully self-hosted, runs on a $15 Raspberry Pi.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="theme-color" content="#4f46e5">
+<script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: { colors: { brand: {
+      50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',
+      400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',
+      800:'#3730a3',900:'#312e81',
+    }}}}}
+  }
+</script>
+<style>
+  html { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
+  .grad-bg {
+    background:
+      radial-gradient(1200px 600px at 20% 0%, rgba(79,70,229,0.20), transparent 60%),
+      radial-gradient(800px 400px at 80% 20%, rgba(16,185,129,0.15), transparent 60%),
+      #020617;
+  }
+  code, pre { font-family: 'SF Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace; }
+  .copy-btn { transition: all .15s; }
+  .copy-btn:hover { background: rgb(51,65,85); }
+  .copy-btn.copied { background: rgb(16,185,129); color: white; }
+</style>
+</head>
+<body class="grad-bg min-h-screen">
+
+<!-- ======================== NAV ======================== -->
+<header class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+  <a href="/" class="flex items-center gap-2 font-bold text-lg">
+    <span class="text-2xl">🪙</span> Chore Coin
+  </a>
+  <nav class="hidden sm:flex items-center gap-6 text-sm text-slate-300">
+    <a href="#features" class="hover:text-white">Features</a>
+    <a href="#install" class="hover:text-white">Install</a>
+    <a href="#pricing" class="hover:text-white">Pricing</a>
+    <a href="https://github.com/danielhemp/chore-coin" class="hover:text-white">GitHub</a>
+  </nav>
+</header>
+
+<!-- ======================== HERO ======================== -->
+<section class="max-w-6xl mx-auto px-6 pt-10 pb-20 sm:pt-20 sm:pb-32 text-center">
+  <div class="text-7xl mb-6">🪙</div>
+  <h1 class="text-4xl sm:text-6xl font-bold tracking-tight leading-tight">
+    Turn chores into a<br>working economy.
+  </h1>
+  <p class="mt-6 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
+    A tiny self-hosted app for families. Base chores unlock screen time,
+    bonus chores earn coins, coins redeem for cash, more screen time, or
+    parent-approved rewards. All the data stays on your Raspberry Pi.
+  </p>
+
+  <!-- Install command -->
+  <div class="mt-10 max-w-3xl mx-auto text-left">
+    <div class="text-xs uppercase tracking-widest text-slate-500 mb-2 text-center">One-line install — macOS, Linux, Raspberry Pi</div>
+    <div class="flex items-stretch gap-2">
+      <pre id="install-cmd" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-4 text-sm overflow-x-auto text-emerald-300 select-all">curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | sh</pre>
+      <button onclick="copyInstall()" class="copy-btn bg-slate-800 border border-slate-700 rounded-xl px-4 text-sm">Copy</button>
+    </div>
+    <p class="mt-3 text-xs text-slate-500 text-center">
+      Reads your OS + CPU arch, verifies SHA-256, installs as a systemd or launchd service. About 20 seconds.
+    </p>
+  </div>
+
+  <div class="mt-8 flex items-center justify-center gap-3 flex-wrap">
+    <a href="#install" class="bg-brand-600 hover:bg-brand-500 rounded-xl px-5 py-3 font-medium">Get started</a>
+    <a href="https://github.com/danielhemp/chore-coin" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl px-5 py-3 font-medium">View on GitHub</a>
+  </div>
+</section>
+
+<!-- ======================== FEATURES ======================== -->
+<section id="features" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-900">
+  <h2 class="text-3xl sm:text-4xl font-bold text-center">Everything a family needs, nothing you don't.</h2>
+  <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-3xl mb-3">⏰</div>
+      <h3 class="font-semibold text-lg">Base chores → screen time</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Finish all of today's base chores → earn 60 minutes of screen time.
+        Use-it-or-lose-it by default; parents can extend or carry over.
+      </p>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-3xl mb-3">🪙</div>
+      <h3 class="font-semibold text-lg">Bonus chores → coins</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Per-chore coin values. Optional daily caps so nobody grinds
+        "empty the dishwasher" seven times before dinner.
+      </p>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-3xl mb-3">🎁</div>
+      <h3 class="font-semibold text-lg">Rewards catalog</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Parent-defined items — "Movie night, 10 coins" — that kids can
+        request. Every reward request lands in your approval queue
+        alongside chore approvals.
+      </p>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-3xl mb-3">⚡</div>
+      <h3 class="font-semibold text-lg">Real-time everywhere</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Approve a chore on your phone; the kid's iPad updates in under a
+        second. Web Push tells parents about pending approvals and kids
+        about approvals and rejections.
+      </p>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-3xl mb-3">📱</div>
+      <h3 class="font-semibold text-lg">PWA on every device</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Add to Home Screen on iOS or Android. Works in Assistive Access
+        for younger kids. One family wall dashboard for the always-on
+        tablet in the kitchen.
+      </p>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-3xl mb-3">🔒</div>
+      <h3 class="font-semibold text-lg">Your data, your server</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Every chore, every coin, every kid's name lives on hardware you
+        own. Single SQLite file, easy backups. Nothing phones home.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ======================== HOW IT WORKS ======================== -->
+<section class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
+  <h2 class="text-3xl sm:text-4xl font-bold text-center">How it works</h2>
+  <div class="mt-14 grid gap-6 sm:grid-cols-3">
+    <div>
+      <div class="text-brand-400 text-sm font-medium">Step 1</div>
+      <h3 class="mt-1 font-semibold text-lg">Kids do chores</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Each kid taps "I did it!" on their own phone or the family tablet.
+        Submission goes into your approval queue.
+      </p>
+    </div>
+    <div>
+      <div class="text-brand-400 text-sm font-medium">Step 2</div>
+      <h3 class="mt-1 font-semibold text-lg">Parents approve</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        You get a push notification. Approve or reject in one tap. Coins
+        credit or screen time unlocks instantly on every family device.
+      </p>
+    </div>
+    <div>
+      <div class="text-brand-400 text-sm font-medium">Step 3</div>
+      <h3 class="mt-1 font-semibold text-lg">Kids redeem</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Coins turn into extra screen time, cash, or reward items you've
+        set up. Every transaction is a signed row in an append-only ledger
+        — the receipts are always there.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== INSTALL ======================== -->
+<section id="install" class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
+  <h2 class="text-3xl sm:text-4xl font-bold text-center">Install in one command</h2>
+  <p class="mt-4 text-center text-slate-400">Works on any Mac (Intel or Apple Silicon), any Linux server, and every Raspberry Pi from Zero 2W through Pi 5.</p>
+
+  <div class="mt-10 grid gap-6 md:grid-cols-2">
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <h3 class="font-semibold text-lg">The easy way</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Autodetects OS + CPU, verifies SHA-256, installs as a service that
+        starts on boot.
+      </p>
+      <pre class="mt-4 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-emerald-300 overflow-x-auto">curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | sh</pre>
+      <p class="mt-3 text-xs text-slate-500">
+        Uses sudo to install into /usr/local/bin and register the service.
+      </p>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <h3 class="font-semibold text-lg">The manual way</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Grab a binary from
+        <a href="https://github.com/danielhemp/chore-coin/releases/latest" class="text-brand-400 underline">the latest release</a>
+        and run it.
+      </p>
+      <pre class="mt-4 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-200 overflow-x-auto">chmod +x chorecoin-*
+./chorecoin-* serve \
+    --http=0.0.0.0:8090 \
+    --dir=/path/to/data</pre>
+      <p class="mt-3 text-xs text-slate-500">
+        Then open <code class="text-slate-300">http://localhost:8090</code> to start the setup wizard.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="mt-10 bg-slate-900/40 border border-slate-800 rounded-2xl p-6">
+    <h3 class="font-semibold">Docker Compose available too</h3>
+    <p class="mt-2 text-sm text-slate-400">
+      Prefer containers? The repo ships a three-container
+      <code class="text-slate-300">docker-compose.yml</code> that's been battle-tested on the
+      family instance for months. Same features, same data model,
+      different distribution.
+    </p>
+    <p class="mt-3">
+      <a href="https://github.com/danielhemp/chore-coin#option-1--docker-compose-current-stable-path" class="text-brand-400 text-sm underline">Docker install guide →</a>
+    </p>
+  </div>
+</section>
+
+<!-- ======================== PRICING ======================== -->
+<section id="pricing" class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
+  <h2 class="text-3xl sm:text-4xl font-bold text-center">Simple pricing</h2>
+  <p class="mt-4 text-center text-slate-400">One perpetual license. Updates included forever. No user seats, no per-kid fees.</p>
+
+  <div class="mt-14 grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-8">
+      <div class="text-sm text-slate-400 uppercase tracking-wider">Free forever</div>
+      <div class="mt-2 text-4xl font-bold">$0</div>
+      <div class="text-sm text-slate-500">— self-host, unlimited use</div>
+      <ul class="mt-6 space-y-3 text-sm text-slate-300">
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> The full app, all features, all updates.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Source code is public under BUSL 1.1.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Community support via GitHub issues.</li>
+      </ul>
+      <a href="#install" class="mt-8 block text-center bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl px-5 py-3 font-medium">Install for free</a>
+    </div>
+
+    <div class="bg-brand-900/30 border border-brand-700 rounded-2xl p-8 relative">
+      <div class="absolute -top-3 right-4 bg-brand-600 text-xs font-medium px-2 py-1 rounded-full">Coming soon</div>
+      <div class="text-sm text-brand-300 uppercase tracking-wider">Family subdomain</div>
+      <div class="mt-2 text-4xl font-bold">$12<span class="text-lg font-normal text-slate-400">/year</span></div>
+      <div class="text-sm text-slate-400">— e.g. <code class="text-slate-300">smiths.chorecoin.family</code></div>
+      <ul class="mt-6 space-y-3 text-sm text-slate-300">
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> A memorable URL your family can bookmark forever.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Point it at your home instance (Cloudflare Tunnel) or your VPS.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> HTTPS with a real cert — no browser warnings.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> DNS-only — your data never touches our infrastructure.</li>
+      </ul>
+      <button disabled class="mt-8 block w-full text-center bg-slate-800/50 border border-slate-700 rounded-xl px-5 py-3 font-medium text-slate-500 cursor-not-allowed">Not available yet</button>
+    </div>
+
+  </div>
+
+  <p class="mt-10 text-center text-sm text-slate-500 max-w-2xl mx-auto">
+    Chore Coin is source-visible under
+    <a href="https://github.com/danielhemp/chore-coin/blob/main/LICENSE" class="text-brand-400 underline">Business Source License 1.1</a>.
+    Free for personal + family use. Automatically converts to Apache 2.0 four years after each release.
+    Commercial repackaging or hosting-as-a-service requires a separate license — contact
+    <a href="mailto:daniel@turnersystems.com" class="text-brand-400 underline">daniel@turnersystems.com</a>.
+  </p>
+</section>
+
+<!-- ======================== FAQ ======================== -->
+<section class="max-w-3xl mx-auto px-6 py-20 border-t border-slate-900">
+  <h2 class="text-3xl sm:text-4xl font-bold text-center">Common questions</h2>
+  <div class="mt-12 space-y-8">
+
+    <div>
+      <h3 class="font-semibold text-lg">Do I need to know Docker?</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        No. The one-line install script drops a single binary onto your
+        Mac, Linux server, or Raspberry Pi. It registers itself as a
+        service that starts at boot. Docker Compose is also supported for
+        people who prefer it, but it's optional.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-lg">What hardware do I need?</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Very little. A <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/" class="text-brand-400 underline">Raspberry Pi Zero 2W</a> ($15)
+        is plenty for a family of any size — Chore Coin idles around 30MB of RAM.
+        Any Mac mini, spare Linux laptop, or NAS with Docker also works.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-lg">Can my family reach it when I'm not home?</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Two options. Free: point a
+        <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/" class="text-brand-400 underline">Cloudflare Tunnel</a>
+        at your instance and open port 8090 to the world without touching
+        your router. Paid: pay $12/year for a <code class="text-slate-300">yourname.chorecoin.family</code> subdomain
+        that DNS-forwards to your instance — no tunnel management required.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-lg">Where does my family's data live?</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        On the machine you install to. A single SQLite file. Back it up
+        by copying one file. Move to a different machine by copying that
+        same file. Never leaves your hardware.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-lg">Does it work on iOS / Android?</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Yes. Chore Coin is a Progressive Web App — open the URL in Safari
+        or Chrome, "Add to Home Screen," and it behaves like a native app.
+        Works in iOS Assistive Access for younger kids, supports native
+        Web Push for notifications on both platforms.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-lg">Can I contribute?</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Bug reports, feature requests, and PRs are all welcome on
+        <a href="https://github.com/danielhemp/chore-coin" class="text-brand-400 underline">GitHub</a>.
+        This is a side project maintained in evenings — response times
+        are days, not minutes.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ======================== FOOTER ======================== -->
+<footer class="max-w-5xl mx-auto px-6 py-12 border-t border-slate-900">
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-slate-500">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">🪙</span>
+      <span>Chore Coin</span>
+      <span class="text-slate-700">·</span>
+      <span>© 2026 Daniel Hemphill</span>
+    </div>
+    <nav class="flex items-center gap-5">
+      <a href="https://github.com/danielhemp/chore-coin" class="hover:text-slate-200">GitHub</a>
+      <a href="https://github.com/danielhemp/chore-coin/releases" class="hover:text-slate-200">Releases</a>
+      <a href="https://github.com/danielhemp/chore-coin/blob/main/LICENSE" class="hover:text-slate-200">License</a>
+      <a href="mailto:daniel@turnersystems.com" class="hover:text-slate-200">Contact</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  function copyInstall() {
+    const cmd = document.getElementById('install-cmd').textContent
+    navigator.clipboard.writeText(cmd).then(() => {
+      const btn = event.target
+      const orig = btn.textContent
+      btn.textContent = 'Copied!'
+      btn.classList.add('copied')
+      setTimeout(() => {
+        btn.textContent = orig
+        btn.classList.remove('copied')
+      }, 1500)
+    })
+  }
+</script>
+
+</body>
+</html>
