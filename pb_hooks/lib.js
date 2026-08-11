@@ -11,6 +11,8 @@ const BASE_REWARD_MINUTES = 60
 const COIN_TO_SCREEN_MINUTES = 5
 const COIN_TO_CENTS = 25
 
+const SETTINGS_KEY = 'instance'
+
 function requireParent(c) {
   const info = $apis.requestInfo(c)
   const user = info.authRecord
@@ -106,6 +108,25 @@ function ensureBalance(txDao, kidId) {
   if (existing) return existing
   const col = txDao.findCollectionByNameOrId('balances')
   const rec = new Record(col, { kidId, coinBalance: 0 })
+  txDao.saveRecord(rec)
+  return rec
+}
+
+// Lazy-creates + returns the singleton row in the `settings` collection.
+// The row is identified by key='instance' and holds licenseKey +
+// licenseActivatedAt + installId. First call ever on a new install writes
+// a random installId; subsequent calls read whatever's there.
+function ensureSettingsRow(txDao) {
+  const existing = findOrNull(() =>
+    txDao.findFirstRecordByFilter('settings', 'key = {:k}', { k: SETTINGS_KEY }),
+  )
+  if (existing) return existing
+  const col = txDao.findCollectionByNameOrId('settings')
+  const rec = new Record(col, {
+    key: SETTINGS_KEY,
+    licenseKey: '',
+    installId: $security.randomString(24).toLowerCase(),
+  })
   txDao.saveRecord(rec)
   return rec
 }
@@ -212,6 +233,7 @@ module.exports = {
   BASE_REWARD_MINUTES,
   COIN_TO_SCREEN_MINUTES,
   COIN_TO_CENTS,
+  SETTINGS_KEY,
   requireParent,
   requireAuthedForKid,
   requireBody,
@@ -219,6 +241,7 @@ module.exports = {
   findOrNull,
   ensureDailyStatus,
   ensureBalance,
+  ensureSettingsRow,
   writeLedger,
   sendNtfy,
   sendWebPushToAllParents,

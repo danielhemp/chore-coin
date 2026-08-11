@@ -16,11 +16,15 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	chorecoin "github.com/danielhemp/chore-coin"
+	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -40,16 +44,47 @@ func main() {
 		MigrationsDir: migrationsDir,
 	})
 
-	// Serve the embedded PWA frontend with SPA fallback (unknown paths return
-	// index.html so React Router handles client-side routing). Registered on
-	// /* which is the least-specific pattern — PocketBase's own /api/* and
-	// /_/* routes take priority because Echo matches more-specific first.
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		// StaticDirectoryHandler(fs, indexFallback=true):
-		//   - Serves any file that exists in the FS (with correct content-type).
-		//   - Falls back to serving index.html for anything that doesn't exist,
-		//     letting the SPA router handle client-side paths like /approvals.
+		// Serve the embedded PWA frontend with SPA fallback (unknown paths
+		// return index.html so React Router handles client-side routing).
+		// Registered on /* — PocketBase's own /api/* and /_/* take priority
+		// because Echo matches more-specific patterns first.
 		e.Router.GET("/*", apis.StaticDirectoryHandler(chorecoin.FrontendFS(), true))
+
+		// Parent-only backup download.
+		//
+		// GET /api/custom/backup → 200 with `application/zip` body — a
+		// full PocketBase backup produced via app.CreateBackup(). Returns
+		// the zip inline so the browser prompts to save. Name includes a
+		// timestamp so multiple backups don't collide in the user's
+		// Downloads folder.
+		e.Router.GET("/api/custom/backup", func(c echo.Context) error {
+			info := apis.RequestInfo(c)
+			if info.AuthRecord == nil || info.AuthRecord.GetString("role") != "parent" {
+				return apis.NewForbiddenError("Parents only.", nil)
+			}
+
+			stamp := time.Now().UTC().Format("2006-01-02-150405")
+			backupName := fmt.Sprintf("chorecoin-backup-%s.zip", stamp)
+
+			// CreateBackup writes to pb_data/backups/<name> and returns
+			// once the file is complete + consistent (uses SQLite Backup
+			// API under the hood — safe to run while the server is live).
+			if err := app.CreateBackup(c.Request().Context(), backupName); err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Backup failed.", err)
+			}
+
+			backupPath := filepath.Join(app.DataDir(), "backups", backupName)
+			// Return the file as a download. Echo's File() adds the right
+			// Content-Type and Content-Length. We set Content-Disposition
+			// explicitly so the browser saves rather than displays.
+			c.Response().Header().Set(
+				"Content-Disposition",
+				fmt.Sprintf(`attachment; filename="%s"`, backupName),
+			)
+			return c.File(backupPath)
+		})
+
 		return nil
 	})
 

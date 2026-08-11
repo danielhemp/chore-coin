@@ -173,6 +173,64 @@ routerAdd('POST', '/api/custom/setup', (c) => {
   return c.json(200, { ok: true })
 })
 
+// -----------------------------------------------------------------------------
+// License management — parent-only get/set/release for the license key.
+// Storage: the `settings` collection (see migration 1700000006), single row
+// keyed by "instance". Server-side we treat the license key as opaque here —
+// full Ed25519 signature verification lands with Lemon Squeezy integration.
+// -----------------------------------------------------------------------------
+
+// GET /api/custom/license  →  { licenseKey?, licenseActivatedAt?, installId }
+routerAdd('GET', '/api/custom/license', (c) => {
+  const { requireParent, ensureSettingsRow } = require(`${__hooks}/lib.js`)
+  requireParent(c)
+  let out = null
+  $app.dao().runInTransaction((txDao) => {
+    const rec = ensureSettingsRow(txDao)
+    out = {
+      licenseKey: rec.getString('licenseKey') || '',
+      licenseActivatedAt: rec.getString('licenseActivatedAt') || '',
+      installId: rec.getString('installId') || '',
+    }
+  })
+  return c.json(200, out)
+})
+
+// POST /api/custom/license/set  { licenseKey }
+// Applies a license key to this install. Format-validated only during v0.
+routerAdd('POST', '/api/custom/license/set', (c) => {
+  const { requireParent, requireBody, ensureSettingsRow } = require(`${__hooks}/lib.js`)
+  requireParent(c)
+  const body = requireBody(c, { licenseKey: '' })
+  const key = String(body.licenseKey || '').trim().toUpperCase()
+  if (!/^CHRC(-[A-Z0-9]{4}){4}$/.test(key)) {
+    throw new BadRequestError('License key format is invalid. Expected CHRC-XXXX-XXXX-XXXX-XXXX.')
+  }
+  $app.dao().runInTransaction((txDao) => {
+    const rec = ensureSettingsRow(txDao)
+    rec.set('licenseKey', key)
+    rec.set('licenseActivatedAt', new Date().toISOString())
+    txDao.saveRecord(rec)
+  })
+  return c.json(200, { ok: true, licenseKey: key })
+})
+
+// POST /api/custom/license/release
+// Clears the license key locally so this install no longer holds it, freeing
+// it for use on a different machine (e.g. hardware upgrade). Non-destructive
+// — data stays intact, only the license entitlement is removed.
+routerAdd('POST', '/api/custom/license/release', (c) => {
+  const { requireParent, ensureSettingsRow } = require(`${__hooks}/lib.js`)
+  requireParent(c)
+  $app.dao().runInTransaction((txDao) => {
+    const rec = ensureSettingsRow(txDao)
+    rec.set('licenseKey', '')
+    rec.set('licenseActivatedAt', null)
+    txDao.saveRecord(rec)
+  })
+  return c.json(200, { ok: true })
+})
+
 // POST /api/custom/push-subscribe  { endpoint, p256dh, auth, userAgent? }
 routerAdd('POST', '/api/custom/push-subscribe', (c) => {
   const { requireBody, findOrNull } = require(`${__hooks}/lib.js`)

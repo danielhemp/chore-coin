@@ -181,6 +181,9 @@ export default function ParentDashboard() {
         <Link to="/dashboard" className="btn-secondary col-span-2">
           📺 Family dashboard (wall display)
         </Link>
+        <Link to="/settings" className="btn-secondary col-span-2">
+          ⚙️ Settings — license + backup
+        </Link>
       </div>
     </TabBarLayout>
   )
