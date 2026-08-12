@@ -71,12 +71,14 @@ if [ -z "$LICENSE" ]; then
   Get one from https://chore-coin.app then run:
       curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | \\
         CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh
-  (or run the installer from an interactive terminal to be prompted)"
+  (or run the installer from an interactive terminal to be prompted).
+  Full install guide: https://chore-coin.app/install-guide.html"
 fi
 # Format check — real signature verification lands with Lemon Squeezy.
 if ! printf "%s" "$LICENSE" | grep -Eq '^CHRC(-[A-Z0-9]{4}){4}$'; then
 	die "license key doesn't match the expected CHRC-XXXX-XXXX-XXXX-XXXX format.
-  Double-check the key from your purchase email and try again."
+  Copy the key straight from your welcome email — no spaces, no line breaks.
+  If you're still stuck, see: https://chore-coin.app/install-guide.html#trouble"
 fi
 ok "license key accepted"
 
@@ -259,8 +261,11 @@ if [ $ready -eq 1 ]; then
 	echo
 	echo "  ${DIM}First time here?${R} The setup wizard will guide you through creating"
 	echo "  ${DIM}your admin account and first parent. All in the browser — no terminal.${R}"
+	echo
+	echo "  ${DIM}Step-by-step guide:${R}  https://chore-coin.app/install-guide.html"
 else
 	echo "  ${RED}Service didn't respond within 20s.${R}"
 	echo "  Check logs: $([ "$OS" = "linux" ] && echo "journalctl -u chorecoin -n 50" || echo "tail -f ~/Library/Logs/chorecoin/chorecoin.err")"
+	echo "  Troubleshooting: https://chore-coin.app/install-guide.html#trouble"
 	exit 1
 fi

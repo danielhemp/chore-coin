@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chore Coin — Install Guide</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --paper: #f8fafc;
+    --border: #e2e8f0;
+    --ink: #0f172a;
+    --ink-mid: #475569;
+    --ink-soft: #64748b;
+    --accent: #4f46e5;
+    --accent-soft: #eef2ff;
+    --success: #059669;
+    --success-soft: #d1fae5;
+    --warn: #b45309;
+    --warn-soft: #fef3c7;
+    --danger: #b91c1c;
+    --danger-soft: #fee2e2;
+    --code-bg: #0f172a;
+    --code-ink: #86efac;
+  }
+  * { box-sizing: border-box; }
+  html { font: 16px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; color: var(--ink); background: var(--paper); }
+  body { max-width: 780px; margin: 0 auto; padding: 32px 24px 80px; background: var(--bg); box-shadow: 0 0 40px rgba(0,0,0,0.06); }
+  h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 6px; }
+  h2 { font-size: 22px; margin: 40px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); letter-spacing: -0.01em; }
+  h2:first-of-type { border-top: 0; padding-top: 0; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); text-decoration: underline; }
+  ul, ol { margin: 0 0 14px; padding-left: 24px; }
+  li { margin: 0 0 6px; }
+  code { font-family: 'SF Mono', ui-monospace, Consolas, monospace; font-size: 0.92em; background: var(--paper); border: 1px solid var(--border); padding: 1px 6px; border-radius: 4px; }
+  pre { font-family: 'SF Mono', ui-monospace, Consolas, monospace; font-size: 13px; line-height: 1.5; background: var(--code-bg); color: var(--code-ink); padding: 14px 16px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+  pre code { background: transparent; border: 0; padding: 0; color: inherit; }
+  .subtitle { color: var(--ink-mid); font-size: 16px; margin: 0 0 24px; }
+  .cover { border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; background: var(--paper); display: grid; gap: 14px; margin: 12px 0 32px; }
+  .cover .row { display: grid; grid-template-columns: 140px 1fr; gap: 12px; font-size: 14px; }
+  .cover .row .label { color: var(--ink-soft); }
+  .step { border-left: 3px solid var(--accent); padding: 0 0 0 16px; margin: 20px 0; }
+  .callout { display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 14px 16px; border-radius: 8px; margin: 16px 0; align-items: start; }
+  .callout .icon { font-size: 22px; line-height: 1; }
+  .callout.tip { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+  .callout.warn { background: var(--warn-soft); border-left: 3px solid var(--warn); }
+  .callout.ok { background: var(--success-soft); border-left: 3px solid var(--success); }
+  .callout.danger { background: var(--danger-soft); border-left: 3px solid var(--danger); }
+  .callout p:last-child { margin-bottom: 0; }
+  .kbd { display: inline-block; padding: 2px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--paper); font-family: 'SF Mono', ui-monospace, Consolas, monospace; font-size: 0.85em; box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+  .toc { background: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; }
+  .toc h3 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .toc ol { margin: 0; padding-left: 20px; font-size: 15px; }
+  .toc li { margin: 4px 0; }
+  .toc a { text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .trouble { display: grid; gap: 12px; }
+  .trouble .card { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; background: var(--paper); }
+  .trouble .card .err { font-family: 'SF Mono', ui-monospace, Consolas, monospace; font-size: 13px; color: var(--danger); background: var(--danger-soft); padding: 6px 10px; border-radius: 4px; margin-bottom: 8px; display: inline-block; }
+  .trouble .card p { margin: 6px 0; font-size: 15px; }
+  .footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 14px; color: var(--ink-soft); }
+  @media print {
+    body { box-shadow: none; max-width: none; }
+    a { color: var(--ink); text-decoration: none; }
+    pre { background: #f4f4f4; color: var(--ink); border: 1px solid var(--border); }
+    .callout.tip, .callout.warn, .callout.ok, .callout.danger { background: var(--paper); }
+    h2 { break-before: page; }
+    h2:first-of-type { break-before: auto; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🪙 Chore Coin — Install Guide</h1>
+<p class="subtitle">Get your family's Chore Coin running in about 15 minutes. Written for parents who have never opened Terminal before.</p>
+
+<div class="cover">
+  <div class="row"><div class="label">What you'll do</div><div>Open Terminal, paste one line, finish setup in your browser.</div></div>
+  <div class="row"><div class="label">How long</div><div>About 15 minutes, first try.</div></div>
+  <div class="row"><div class="label">What you need</div><div>Your license key + a computer at home that stays on.</div></div>
+  <div class="row"><div class="label">Skill level</div><div>Zero — this guide walks you through every step with exactly what to type.</div></div>
+</div>
+
+<div class="toc">
+  <h3>What's in this guide</h3>
+  <ol>
+    <li><a href="#before">Before you start — what you need</a></li>
+    <li><a href="#mac">Part 1a — On a Mac</a></li>
+    <li><a href="#linux">Part 1b — On a Raspberry Pi or Linux computer</a></li>
+    <li><a href="#install">Part 2 — Run the install command</a></li>
+    <li><a href="#setup">Part 3 — Finish setup in your browser</a></li>
+    <li><a href="#kids">Part 4 — Add your kids</a></li>
+    <li><a href="#chores">Part 5 — Add your first chores</a></li>
+    <li><a href="#phones">Part 6 — Put Chore Coin on everyone's phone</a></li>
+    <li><a href="#trouble">If something goes wrong</a></li>
+    <li><a href="#help">Getting more help</a></li>
+  </ol>
+</div>
+
+<!-- =============================================================== -->
+<h2 id="before">1. Before you start — what you need</h2>
+
+<p>Two things:</p>
+
+<ol>
+  <li><strong>Your license key.</strong> It looks like <code>CHRC-A1B2-C3D4-E5F6-G7H8</code>. It's in the welcome email you got when you bought Chore Coin. If you can't find that email, search your inbox for "Chore Coin license."</li>
+  <li><strong>A computer at your house that stays on.</strong> Any of these works:
+    <ul>
+      <li>A spare laptop you don't use anymore (Mac or Linux — Windows isn't supported yet)</li>
+      <li>A Mac mini, iMac, or Mac Pro (any age from the last 10 years)</li>
+      <li>A <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/">$15 Raspberry Pi Zero 2W</a> (the size of a pack of gum — perfect for this)</li>
+      <li>A home NAS (Synology, QNAP, Unraid) if you have one</li>
+    </ul>
+    Any of these will do fine. Chore Coin uses less memory than a single browser tab.
+  </li>
+</ol>
+
+<div class="callout tip">
+  <div class="icon">💡</div>
+  <div>
+    <p><strong>Which one should I pick?</strong> If you have a spare laptop, that's the easiest — you already know how to use it. If you don't, the $15 Raspberry Pi Zero 2W is what most families choose. Plug it into a wall outlet, connect it to your Wi-Fi, and forget it exists.</p>
+  </div>
+</div>
+
+<p>Once you've picked which computer you'll run Chore Coin on, jump to the section that matches it:</p>
+<ul>
+  <li>If it's a <strong>Mac</strong> → skip to <a href="#mac">Part 1a</a>.</li>
+  <li>If it's a <strong>Raspberry Pi or Linux computer</strong> → skip to <a href="#linux">Part 1b</a>.</li>
+</ul>
+
+<!-- =============================================================== -->
+<h2 id="mac">2. Part 1a — On a Mac: open Terminal</h2>
+
+<p>Terminal is an app that's already installed on every Mac. It looks intimidating but you'll only use it for one command.</p>
+
+<h3>To open Terminal:</h3>
+
+<ol>
+  <li>Press <span class="kbd">⌘</span> + <span class="kbd">Space</span> on your keyboard. A search box appears in the middle of the screen.</li>
+  <li>Type the word <strong>terminal</strong> and press <span class="kbd">Return</span>.</li>
+  <li>A window opens with white or black text on a dark background, and a prompt that looks like:
+    <pre>yourname@yourmacs-name ~ %</pre>
+  </li>
+</ol>
+
+<div class="callout ok">
+  <div class="icon">✓</div>
+  <div>
+    <p><strong>That's it.</strong> Terminal is now open. Leave the window there — you'll paste one line into it in a moment.</p>
+    <p>Skip to <a href="#install">Part 2</a>.</p>
+  </div>
+</div>
+
+<!-- =============================================================== -->
+<h2 id="linux">3. Part 1b — On a Raspberry Pi or Linux computer</h2>
+
+<p>You need to get to a terminal (also called a "command line" or "shell"). There are two ways depending on your setup.</p>
+
+<h3>If the computer has a keyboard + monitor plugged in:</h3>
+<p>Open the "Terminal" app from the applications menu — usually under Accessories or System Tools. On Raspberry Pi OS the icon is a black square in the top-right of the desktop.</p>
+
+<h3>If the computer is "headless" (no monitor):</h3>
+<p>You'll connect from another computer using SSH.</p>
+<ol>
+  <li>Find the Raspberry Pi's IP address. Easiest: check your Wi-Fi router's admin page for connected devices; it usually shows up as "raspberrypi."</li>
+  <li>From another Mac or Linux computer, open Terminal and type:
+    <pre>ssh pi@[the-ip-address]</pre>
+    Replace <code>[the-ip-address]</code> with what you found (e.g. <code>ssh pi@192.168.1.42</code>).</li>
+  <li>Enter the Pi's password when asked (default on fresh Raspberry Pi OS is <code>raspberry</code>).</li>
+</ol>
+
+<div class="callout ok">
+  <div class="icon">✓</div>
+  <div>
+    <p><strong>You should now see a prompt</strong> that ends in <code>$</code> or <code>#</code>. Continue to <a href="#install">Part 2</a>.</p>
+  </div>
+</div>
+
+<!-- =============================================================== -->
+<h2 id="install">4. Part 2 — Run the install command</h2>
+
+<p>This is the one command you'll paste. It downloads Chore Coin, installs it, and starts it up as a background service that runs even after you close Terminal.</p>
+
+<p><strong>Copy this whole thing:</strong></p>
+
+<pre>curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
+  CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh</pre>
+
+<div class="callout warn">
+  <div class="icon">⚠️</div>
+  <div>
+    <p><strong>Before you paste:</strong> replace <code>CHRC-XXXX-XXXX-XXXX-XXXX</code> with your real license key from the welcome email. Everything else stays the same. Keep the backslash and the newline in place.</p>
+  </div>
+</div>
+
+<h3>To paste and run:</h3>
+<ol>
+  <li>Click the Terminal window to focus it.</li>
+  <li>Paste the command:
+    <ul>
+      <li>On Mac: <span class="kbd">⌘</span> + <span class="kbd">V</span></li>
+      <li>On Linux/Pi: <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">V</span></li>
+    </ul>
+  </li>
+  <li>Press <span class="kbd">Return</span>.</li>
+  <li>You may be asked for your Mac/Linux password (the one you use to log in). Type it and press Return. <em>You won't see any dots or characters appear as you type — that's normal for Terminal.</em></li>
+</ol>
+
+<h3>What you'll see:</h3>
+<p>Text will scroll by for 20-40 seconds. You'll see messages like:</p>
+<pre>Chore Coin installer
+  ✓ license key accepted
+Platform: darwin/arm64 → chorecoin-darwin-arm64
+Finding the latest release...
+  ✓ Release v0.1.0
+Downloading...
+  ✓ checksum verified
+  ✓ installed /usr/local/bin/chorecoin
+  ✓ data directory /Users/you/Library/Application Support/chorecoin
+  ✓ license key staged for setup wizard
+  ✓ launchd agent loaded
+Chore Coin is running.
+
+  Open in your browser:  http://127.0.0.1:8090</pre>
+
+<div class="callout ok">
+  <div class="icon">✓</div>
+  <div>
+    <p><strong>You're 90% done.</strong> The last line tells you the address to open in your browser. Copy that URL and continue to Part 3.</p>
+  </div>
+</div>
+
+<div class="callout warn">
+  <div class="icon">⚠️</div>
+  <div>
+    <p><strong>Something error out?</strong> Skip to <a href="#trouble">"If something goes wrong"</a> at the bottom. It covers every failure we've seen and how to fix each in under a minute.</p>
+  </div>
+</div>
+
+<!-- =============================================================== -->
+<h2 id="setup">5. Part 3 — Finish setup in your browser</h2>
+
+<p>Open the address the installer printed (usually <code>http://127.0.0.1:8090</code>) in Safari, Chrome, or Firefox. You'll see a welcome screen with three steps.</p>
+
+<h3>Step 1 — License key</h3>
+<p>Your license key should already be filled in (the installer handed it to the wizard for you). Click <strong>Next →</strong>.</p>
+
+<h3>Step 2 — Admin account</h3>
+<p>This account is only for the low-level database screen you'll almost never look at. Suggestions:</p>
+<ul>
+  <li><strong>Admin email:</strong> anything (e.g. <code>admin@family.local</code>). Doesn't have to be real.</li>
+  <li><strong>Admin password:</strong> at least 10 characters. <strong>Write this down somewhere safe.</strong> You'll need it if you ever want to poke at the database directly, but that's rare.</li>
+</ul>
+
+<h3>Step 3 — Your parent account</h3>
+<p>This is what you'll actually use every day.</p>
+<ul>
+  <li><strong>Your name:</strong> your first name (kids will see it).</li>
+  <li><strong>Your email:</strong> a real address — you'll log in with this.</li>
+  <li><strong>Password:</strong> at least 8 characters.</li>
+  <li><strong>Avatar:</strong> pick an emoji.</li>
+</ul>
+<p>Click <strong>Finish setup</strong>. You'll be signed in automatically and dropped on the app's main screen.</p>
+
+<div class="callout ok">
+  <div class="icon">🎉</div>
+  <div>
+    <p><strong>Chore Coin is now installed and running on your home computer.</strong> The rest of this guide covers adding your family and putting Chore Coin on everyone's phone.</p>
+  </div>
+</div>
+
+<!-- =============================================================== -->
+<h2 id="kids">6. Part 4 — Add your kids</h2>
+
+<ol>
+  <li>Tap the <strong>gear icon</strong> (⚙️) in the top right, then <strong>Kids</strong>.</li>
+  <li>Tap <strong>+ Add a kid</strong>.</li>
+  <li>Enter their name and pick an emoji avatar.</li>
+  <li>Give them a login so they can sign in on their own phone:
+    <ul>
+      <li><strong>Username:</strong> their first name in lowercase (e.g. <code>alex</code>).</li>
+      <li><strong>PIN:</strong> a 4-6 digit number they'll remember (e.g. their birth month + day).</li>
+    </ul>
+  </li>
+  <li>Tap <strong>Save</strong>.</li>
+</ol>
+
+<p>Repeat for each kid. You can go back and change any of this later.</p>
+
+<!-- =============================================================== -->
+<h2 id="chores">7. Part 5 — Add your first chores</h2>
+
+<p>There are two kinds of chores:</p>
+
+<h3>Base chores</h3>
+<p>The everyday things each kid needs to do to earn their <strong>60 minutes of screen time</strong>. Make the list short — 4 or 5 things works well. Examples:</p>
+<ul>
+  <li>Make your bed</li>
+  <li>Brush your teeth</li>
+  <li>Read 20 minutes</li>
+  <li>Feed the dog</li>
+</ul>
+<p>To add base chores: <strong>Chores → Base → + Add</strong>, then pick which kid it's for.</p>
+
+<h3>Bonus chores</h3>
+<p>Extra jobs kids can do for <strong>coins</strong>. Give each one a coin value and (optionally) a daily cap. Examples:</p>
+<ul>
+  <li>Empty the dishwasher — 3 coins (max 1/day)</li>
+  <li>Take out the trash — 5 coins (max 1/day)</li>
+  <li>Vacuum the living room — 8 coins</li>
+  <li>Wash the car — 15 coins</li>
+</ul>
+<p>To add bonus chores: <strong>Chores → Bonus → + Add</strong>.</p>
+
+<h3>Rewards</h3>
+<p>Optional: set up things kids can spend coins on beyond screen time. Examples:</p>
+<ul>
+  <li>Movie night — 10 coins</li>
+  <li>Pick dinner — 15 coins</li>
+  <li>Stay up 30 minutes late — 12 coins</li>
+</ul>
+<p>To add rewards: <strong>Rewards → + Add</strong>.</p>
+
+<div class="callout tip">
+  <div class="icon">💡</div>
+  <div>
+    <p><strong>Start small.</strong> Add 3-4 base chores and 3 bonus chores to begin with. You can always add more once you see what your kids actually engage with.</p>
+  </div>
+</div>
+
+<!-- =============================================================== -->
+<h2 id="phones">8. Part 6 — Put Chore Coin on everyone's phone</h2>
+
+<p>Chore Coin isn't in the App Store — you install it by adding a shortcut from your browser. It's just as good, and skips App Store approvals and family sharing headaches.</p>
+
+<h3>On iPhone / iPad (Safari):</h3>
+<ol>
+  <li>Open Safari and go to your Chore Coin address. On the same Wi-Fi as your home computer, that's <code>http://[your-computer-name].local:8090</code>. If that doesn't work, use the IP address the installer printed.</li>
+  <li>Sign in as the kid (their username + PIN).</li>
+  <li>Tap the <strong>Share</strong> button (the square with an arrow pointing up).</li>
+  <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+  <li>Tap <strong>Add</strong>.</li>
+</ol>
+<p>A Chore Coin icon now sits on the home screen just like any other app.</p>
+
+<h3>On Android (Chrome):</h3>
+<ol>
+  <li>Open Chrome and go to your Chore Coin address.</li>
+  <li>Sign in.</li>
+  <li>Tap the three-dot menu → <strong>Install app</strong> (or <strong>Add to Home Screen</strong>).</li>
+</ol>
+
+<div class="callout tip">
+  <div class="icon">💡</div>
+  <div>
+    <p><strong>For the family kitchen tablet:</strong> create a "dashboard" login (Settings → Users → + Add → role: Dashboard). Add it to the home screen, put the tablet on the counter, and everyone can see today's chores + everyone's coin balances at a glance.</p>
+  </div>
+</div>
+
+<!-- =============================================================== -->
+<h2 id="trouble">9. If something goes wrong</h2>
+
+<p>Nine times out of ten it's one of these. Try the fix, then re-run the install command.</p>
+
+<div class="trouble">
+
+  <div class="card">
+    <span class="err">no license key provided</span>
+    <p><strong>What it means:</strong> you didn't paste your key into the command, or you pasted a fake one like <code>CHRC-XXXX-XXXX-XXXX-XXXX</code>.</p>
+    <p><strong>Fix:</strong> open your welcome email, copy the real key (the one that starts with <code>CHRC-</code> followed by 16 random letters + numbers), and paste it in place of <code>CHRC-XXXX-XXXX-XXXX-XXXX</code>.</p>
+  </div>
+
+  <div class="card">
+    <span class="err">license key doesn't match the expected format</span>
+    <p><strong>What it means:</strong> the key got mangled during copy-paste — usually an extra space at the start or end, or a line break in the middle.</p>
+    <p><strong>Fix:</strong> re-copy the key straight from your email. It's always 24 characters total, in the shape <code>CHRC-XXXX-XXXX-XXXX-XXXX</code>. No spaces, no line breaks.</p>
+  </div>
+
+  <div class="card">
+    <span class="err">Permission denied (publickey)</span> <em>(only appears if you're SSH'd into a Pi)</em>
+    <p><strong>What it means:</strong> the Pi is refusing your SSH key.</p>
+    <p><strong>Fix:</strong> on the Pi itself (with keyboard + monitor plugged in), enable SSH password auth: <code>sudo raspi-config → Interface Options → SSH → Enable</code>. Then try SSH again with the Pi's password.</p>
+  </div>
+
+  <div class="card">
+    <span class="err">curl: command not found</span>
+    <p><strong>What it means:</strong> curl isn't installed. On a Mac this shouldn't happen. On Linux/Pi it can happen on very minimal images.</p>
+    <p><strong>Fix (Linux/Pi):</strong> run <code>sudo apt update &amp;&amp; sudo apt install -y curl</code>, then run the install command again.</p>
+  </div>
+
+  <div class="card">
+    <span class="err">need root or sudo to install to /usr/local/bin</span>
+    <p><strong>What it means:</strong> the installer needs to write to a system folder and doesn't have permission.</p>
+    <p><strong>Fix:</strong> your Mac/Linux account needs to be an admin. On a Mac: System Settings → Users &amp; Groups — your account should show "Administrator" under your name. If it doesn't, sign in as an admin account and re-run.</p>
+  </div>
+
+  <div class="card">
+    <span class="err">Service didn't respond within 20s</span>
+    <p><strong>What it means:</strong> the installer finished but the app didn't start up in time. Usually a port conflict — something else is already using port 8090.</p>
+    <p><strong>Fix:</strong> re-run the install command with a different port:
+    <pre>curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
+  CHORECOIN_LICENSE=your-key-here CHORECOIN_PORT=8091 sh</pre>
+    Then open <code>http://127.0.0.1:8091</code> instead.</p>
+  </div>
+
+  <div class="card">
+    <span class="err">The browser page won't load / says "can't connect to server"</span>
+    <p><strong>Fix:</strong> Wait 30 seconds and try again — the service takes a moment to start on first boot. If it still won't load, check the app is actually running:</p>
+    <ul>
+      <li>On Mac: <code>launchctl list | grep chorecoin</code> should show a line.</li>
+      <li>On Linux: <code>systemctl status chorecoin</code> should say "active (running)."</li>
+    </ul>
+    <p>If it doesn't, run <code>tail -f ~/Library/Logs/chorecoin/chorecoin.err</code> (Mac) or <code>journalctl -u chorecoin -n 50</code> (Linux) and email us what you see.</p>
+  </div>
+
+  <div class="card">
+    <span class="err">I can't find my Chore Coin address from my kid's phone</span>
+    <p><strong>What it means:</strong> the phone needs to be on the same Wi-Fi network as the computer running Chore Coin.</p>
+    <p><strong>Fix:</strong> make sure both are on the same Wi-Fi. Then find your home computer's name — on Mac it's in System Settings → General → About → Local hostname (e.g. <code>macbook-air.local</code>). On the phone, open Safari and go to <code>http://[that-name].local:8090</code>.</p>
+    <p>If that doesn't work, use the IP address instead: on Mac, hold Option and click the Wi-Fi icon in the menu bar — the IP address is shown at the top. Then on the phone go to <code>http://[that-ip]:8090</code>.</p>
+  </div>
+
+</div>
+
+<!-- =============================================================== -->
+<h2 id="help">10. Getting more help</h2>
+
+<p>If your problem isn't in the troubleshooting list above:</p>
+
+<ol>
+  <li><strong>Email <a href="mailto:daniel@turnersystems.com?subject=Chore%20Coin%20install%20help">daniel@turnersystems.com</a></strong> with:
+    <ul>
+      <li>What computer you're installing on (Mac / Pi / other Linux)</li>
+      <li>The exact error message you saw (a copy-paste is best; a screenshot works too)</li>
+      <li>Which step of this guide you were on</li>
+    </ul>
+    Response time is typically 1-2 business days. This is a side project we run in evenings, not a 24/7 support desk.
+  </li>
+  <li><strong>Ask a tech-friendly friend.</strong> The install is a single command; anyone comfortable with a Mac Terminal can help you through it in 15 minutes.</li>
+  <li><strong>Paid install help</strong> is available at $50 one-time via screen-share (30-45 minutes, we do the whole install with you). Reply to your welcome email if you'd like this option.</li>
+</ol>
+
+<div class="footer">
+  <p>Chore Coin — © 2026 Daniel Hemphill · <a href="https://chore-coin.app">chore-coin.app</a> · <a href="mailto:daniel@turnersystems.com">daniel@turnersystems.com</a></p>
+  <p>Guide version 0.1 — this document improves every time a real family gets stuck. If something in it wasn't clear, please email us and we'll fix it.</p>
+</div>
+
+</body>
+</html>
