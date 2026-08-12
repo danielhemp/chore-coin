@@ -1,6 +1,6 @@
-// Parent Settings — license management + one-click backup download.
+// Parent Settings — license management + one-click backup download + feedback.
 //
-// Two independent panels:
+// Three independent panels:
 //   1. License   — view/set/release the Chore Coin license key stored on
 //                  this install. Value comes from /api/custom/license.
 //                  Release makes it possible to activate the same key on
@@ -10,11 +10,19 @@
 //                  the resulting zip back as a file download.
 //                  The user saves it locally; the wizard on a new install
 //                  will accept it for restore (that flow ships next).
+//   3. Feedback  — three mailto buttons (bug / feature / question) that
+//                  pre-fill an email to daniel@turnersystems.com with the
+//                  install ID + timezone + timestamp so replies can be
+//                  correlated back to this specific instance. No server
+//                  infrastructure required — mailto is opened in the user's
+//                  default email client.
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TabBarLayout, PageHeader } from '../../components/Layout'
 import { PARENT_TABS } from './ParentDashboard'
-import { pb, callCustom } from '../../pb'
+import { pb, callCustom, LOCAL_TZ } from '../../pb'
+
+const FEEDBACK_EMAIL = 'daniel@turnersystems.com'
 
 interface LicenseState {
   licenseKey: string
@@ -161,8 +169,7 @@ export default function Settings() {
           </div>
         ) : (
           <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-4 text-sm text-amber-200">
-            No license active on this install. Enter your key below, or
-            leave it blank while Chore Coin is free during v0.
+            No license active on this install. Enter your key below.
           </div>
         )}
 
@@ -244,6 +251,50 @@ export default function Settings() {
         )}
       </section>
 
+      {/* ---- Feedback panel ------------------------------------------- */}
+      <section className="card mt-6 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Feedback</h2>
+          <p className="text-xs text-slate-400 mt-1">
+            We build Chore Coin based on what real families ask for.
+            Bug reports, feature requests, questions — pick a button and
+            your default email opens with a pre-filled message. If email
+            isn't set up on this device, write to{' '}
+            <a href={`mailto:${FEEDBACK_EMAIL}`} className="text-brand-400 underline">
+              {FEEDBACK_EMAIL}
+            </a>{' '}
+            directly.
+          </p>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-3">
+          <a
+            href={buildFeedbackMailto('bug', license?.installId)}
+            className="btn-secondary text-center"
+          >
+            🐛 Report a bug
+          </a>
+          <a
+            href={buildFeedbackMailto('feature', license?.installId)}
+            className="btn-secondary text-center"
+          >
+            ✨ Suggest a feature
+          </a>
+          <a
+            href={buildFeedbackMailto('question', license?.installId)}
+            className="btn-secondary text-center"
+          >
+            💬 Ask a question
+          </a>
+        </div>
+
+        <p className="text-xs text-slate-500">
+          Your email is the only thing we get — no automatic phone-home,
+          no data from your install. The install ID below helps us find
+          the specific instance you're on if you send follow-up messages.
+        </p>
+      </section>
+
       {license?.installId && (
         <p className="mt-8 text-xs text-slate-600 text-center">
           Install ID: <code className="text-slate-500">{license.installId}</code>
@@ -251,4 +302,47 @@ export default function Settings() {
       )}
     </TabBarLayout>
   )
+}
+
+/**
+ * Build a mailto: URL with a subject line tagged by kind and a body
+ * pre-populated with the install ID + timezone + timestamp so replies
+ * can be correlated back to this specific instance. All fields are
+ * user-editable — nothing is sent automatically, they still click Send
+ * in their email client.
+ */
+function buildFeedbackMailto(
+  kind: 'bug' | 'feature' | 'question',
+  installId: string | undefined,
+): string {
+  const subjectByKind = {
+    bug: 'Chore Coin — bug report',
+    feature: 'Chore Coin — feature request',
+    question: 'Chore Coin — question',
+  }
+  const promptByKind = {
+    bug: 'Please describe what went wrong, and what you expected instead.',
+    feature: 'Please describe what you would like Chore Coin to do.',
+    question: 'What would you like to know?',
+  }
+
+  const installFragment = installId ? installId.slice(0, 8) : 'unknown'
+  const subject = `${subjectByKind[kind]} [${installFragment}]`
+
+  const body = [
+    promptByKind[kind],
+    '',
+    '',
+    '',
+    '',
+    '---',
+    '(Below this line: technical details that help us find your install.',
+    'Feel free to leave them in — nothing personal is included.)',
+    `Install ID: ${installId || 'not available'}`,
+    `Timezone:   ${LOCAL_TZ}`,
+    `Sent at:    ${new Date().toISOString()}`,
+    `User agent: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'}`,
+  ].join('\n')
+
+  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 }
