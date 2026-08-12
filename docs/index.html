@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chore Coin — a family chore + reward tracker you self-host</title>
-<meta name="description" content="A tiny self-hosted PWA that turns kids' chores into a working economy. Base chores earn screen time, bonus chores earn coins, coins redeem for cash, screen time, or parent-approved rewards. Runs on a Raspberry Pi.">
-<meta property="og:title" content="Chore Coin — a family chore + reward tracker you self-host">
-<meta property="og:description" content="Base chores earn screen time. Bonus chores earn coins. Coins redeem for cash, screen time, or rewards. Fully self-hosted, runs on a $15 Raspberry Pi.">
+<title>Chore Coin — chores, screen time, and allowance in one family app</title>
+<meta name="description" content="A tiny app for your family. Kids finish chores, earn coins, and cash them in for screen time, pocket money, or rewards you set. Runs from your home so your family's data stays with your family.">
+<meta property="og:title" content="Chore Coin — chores, screen time, and allowance in one family app">
+<meta property="og:description" content="Kids do chores, earn coins, cash them in for screen time, cash, or rewards you set. Runs from your home. Your data stays with your family.">
 <meta property="og:type" content="website">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/icon-192.png">
@@ -33,6 +33,63 @@
   .copy-btn { transition: all .15s; }
   .copy-btn:hover { background: rgb(51,65,85); }
   .copy-btn.copied { background: rgb(16,185,129); color: white; }
+
+  /* CSS-drawn "phone" mockup frames used until real screenshots land. */
+  .phone {
+    width: 300px;
+    border-radius: 42px;
+    background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+    padding: 12px;
+    box-shadow:
+      0 0 0 8px #1e293b,
+      0 40px 80px -20px rgba(0,0,0,0.6),
+      0 0 100px -20px rgba(99,102,241,0.4);
+    position: relative;
+  }
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 22px; left: 50%; transform: translateX(-50%);
+    width: 90px; height: 24px;
+    background: #000;
+    border-radius: 12px;
+    z-index: 2;
+  }
+  .phone-screen {
+    background: #020617;
+    border-radius: 32px;
+    height: 600px;
+    overflow: hidden;
+    padding: 44px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tablet {
+    width: 100%;
+    max-width: 720px;
+    border-radius: 24px;
+    background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+    padding: 12px;
+    box-shadow:
+      0 0 0 6px #1e293b,
+      0 30px 60px -10px rgba(0,0,0,0.6);
+  }
+  .tablet-screen {
+    background: #020617;
+    border-radius: 16px;
+    padding: 24px;
+    display: grid;
+    gap: 16px;
+  }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+    background: rgba(99,102,241,0.15); color: #a5b4fc;
+    border: 1px solid rgba(99,102,241,0.3);
+  }
 </style>
 </head>
 <body class="grad-bg min-h-screen">
@@ -43,105 +100,438 @@
     <span class="text-2xl">🪙</span> Chore Coin
   </a>
   <nav class="hidden sm:flex items-center gap-6 text-sm text-slate-300">
-    <a href="#features" class="hover:text-white">Features</a>
-    <a href="#install" class="hover:text-white">Install</a>
+    <a href="#tour" class="hover:text-white">See it</a>
+    <a href="#how" class="hover:text-white">How it works</a>
     <a href="#pricing" class="hover:text-white">Pricing</a>
-    <a href="https://github.com/danielhemp/chore-coin" class="hover:text-white">GitHub</a>
+    <a href="#faq" class="hover:text-white">FAQ</a>
   </nav>
 </header>
 
 <!-- ======================== HERO ======================== -->
-<section class="max-w-6xl mx-auto px-6 pt-10 pb-20 sm:pt-20 sm:pb-32 text-center">
-  <div class="text-7xl mb-6">🪙</div>
-  <h1 class="text-4xl sm:text-6xl font-bold tracking-tight leading-tight">
-    Turn chores into a<br>working economy.
-  </h1>
-  <p class="mt-6 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
-    A tiny self-hosted app for families. Base chores unlock screen time,
-    bonus chores earn coins, coins redeem for cash, more screen time, or
-    parent-approved rewards. All the data stays on your Raspberry Pi.
-  </p>
+<section class="max-w-6xl mx-auto px-6 pt-10 pb-16 sm:pt-16 sm:pb-24">
+  <div class="grid md:grid-cols-5 gap-10 items-center">
 
-  <!-- Install command — shown for trust; requires a license to actually complete -->
-  <div class="mt-10 max-w-3xl mx-auto text-left">
-    <div class="text-xs uppercase tracking-widest text-slate-500 mb-2 text-center">One-line install — macOS, Linux, Raspberry Pi</div>
-    <div class="flex items-stretch gap-2">
-      <pre id="install-cmd" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-4 text-sm overflow-x-auto text-emerald-300 select-all">curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
-  CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh</pre>
-      <button onclick="copyInstall()" class="copy-btn bg-slate-800 border border-slate-700 rounded-xl px-4 text-sm">Copy</button>
+    <div class="md:col-span-3 text-center md:text-left">
+      <span class="chip mb-5">🏡 A family app that runs from home</span>
+      <h1 class="mt-4 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+        Chores your kids finish.<br>
+        <span class="text-brand-400">Screen time they've earned.</span>
+      </h1>
+      <p class="mt-6 text-lg text-slate-300 max-w-xl mx-auto md:mx-0">
+        One tiny app for your whole family. Kids check off chores, earn coins,
+        and cash them in for extra screen time, allowance, or rewards you set.
+        Everything updates on every phone in the family in real time.
+      </p>
+      <p class="mt-4 text-base text-slate-400 max-w-xl mx-auto md:mx-0">
+        And because it runs from a small computer in your own home — not
+        someone else's cloud — <span class="text-slate-200 font-medium">your family's data
+        never leaves your house</span>.
+      </p>
+
+      <div class="mt-8 flex items-center justify-center md:justify-start gap-3 flex-wrap">
+        <a href="#pricing" class="bg-brand-600 hover:bg-brand-500 rounded-xl px-6 py-3.5 font-medium text-base">Get Chore Coin — $20 once</a>
+        <a href="#tour" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl px-6 py-3.5 font-medium">See how it works</a>
+      </div>
+      <p class="mt-4 text-xs text-slate-500 text-center md:text-left">
+        One-time price · No subscription · Every update forever · Free install help
+      </p>
     </div>
-    <p class="mt-3 text-xs text-slate-500 text-center">
-      Requires a license key. Reads your OS + CPU arch, verifies SHA-256, installs as a systemd or launchd service. About 20 seconds.
-    </p>
-  </div>
 
-  <div class="mt-8 flex items-center justify-center gap-3 flex-wrap">
-    <a href="#pricing" class="bg-brand-600 hover:bg-brand-500 rounded-xl px-5 py-3 font-medium">Get a license — $20</a>
-    <a href="#features" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl px-5 py-3 font-medium">See what you get</a>
+    <!-- Hero visual: kid-home phone mockup -->
+    <div class="md:col-span-2 flex justify-center">
+      <div class="phone" aria-hidden="true">
+        <div class="phone-screen">
+          <!-- kid header -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-10 h-10 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-xl">👦</div>
+              <div>
+                <div class="text-sm font-semibold">Alex</div>
+                <div class="text-[10px] text-slate-500">Tuesday</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-xl font-bold text-amber-300">47 🪙</div>
+              <div class="text-[10px] text-slate-500">your coins</div>
+            </div>
+          </div>
+
+          <!-- base chore progress -->
+          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-xs font-medium text-slate-300">Today's chores</div>
+              <div class="text-xs text-emerald-400">3 of 5 done</div>
+            </div>
+            <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-500 rounded-full" style="width:60%"></div>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-2">Finish all 5 → 60 min screen time</div>
+          </div>
+
+          <!-- chore tiles -->
+          <div class="space-y-2 overflow-hidden">
+            <div class="flex items-center gap-3 bg-emerald-950/40 border border-emerald-800/40 rounded-lg px-3 py-2.5">
+              <div class="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold">✓</div>
+              <div class="text-sm text-slate-200 line-through decoration-emerald-500">Make your bed</div>
+            </div>
+            <div class="flex items-center gap-3 bg-emerald-950/40 border border-emerald-800/40 rounded-lg px-3 py-2.5">
+              <div class="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold">✓</div>
+              <div class="text-sm text-slate-200 line-through decoration-emerald-500">Brush teeth</div>
+            </div>
+            <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-lg px-3 py-2.5">
+              <div class="w-6 h-6 rounded-full border-2 border-slate-600"></div>
+              <div class="text-sm text-slate-200">Feed the dog</div>
+            </div>
+            <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-lg px-3 py-2.5">
+              <div class="w-6 h-6 rounded-full border-2 border-slate-600"></div>
+              <div class="text-sm text-slate-200">Read 20 minutes</div>
+            </div>
+          </div>
+
+          <!-- coin redemption footer -->
+          <div class="mt-auto grid grid-cols-2 gap-2">
+            <div class="bg-brand-950/60 border border-brand-700/50 rounded-lg p-2 text-center">
+              <div class="text-lg">📺</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Screen time</div>
+              <div class="text-[10px] text-brand-300 font-medium">1 🪙 = 5 min</div>
+            </div>
+            <div class="bg-brand-950/60 border border-brand-700/50 rounded-lg p-2 text-center">
+              <div class="text-lg">🎁</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Rewards</div>
+              <div class="text-[10px] text-brand-300 font-medium">10+ 🪙 each</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
 
-<!-- ======================== FEATURES ======================== -->
+<!-- ======================== SOCIAL PROOF / TRUST LINE ================== -->
+<section class="border-t border-slate-900 bg-slate-950/60">
+  <div class="max-w-5xl mx-auto px-6 py-8 grid sm:grid-cols-3 gap-6 text-center text-sm">
+    <div>
+      <div class="text-2xl mb-1">🔒</div>
+      <div class="text-slate-200 font-medium">Zero data sharing</div>
+      <div class="text-xs text-slate-500 mt-1">Nothing leaves your house</div>
+    </div>
+    <div>
+      <div class="text-2xl mb-1">📱</div>
+      <div class="text-slate-200 font-medium">Works on every device</div>
+      <div class="text-xs text-slate-500 mt-1">iPhone, iPad, Android, tablet</div>
+    </div>
+    <div>
+      <div class="text-2xl mb-1">💵</div>
+      <div class="text-slate-200 font-medium">$20, once</div>
+      <div class="text-xs text-slate-500 mt-1">No subscription, ever</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SEE IT IN ACTION ======================== -->
+<section id="tour" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-900">
+  <div class="text-center max-w-2xl mx-auto">
+    <h2 class="text-3xl sm:text-4xl font-bold">See it in action</h2>
+    <p class="mt-4 text-slate-400">
+      Three screens your family will actually use. Everything updates in
+      real time across every phone and tablet in the house.
+    </p>
+  </div>
+
+  <!-- Screen 1: Parent approvals (phone) -->
+  <div class="mt-16 grid md:grid-cols-2 gap-12 items-center">
+    <div class="flex justify-center order-2 md:order-1">
+      <div class="phone" aria-hidden="true">
+        <div class="phone-screen">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-semibold">Approvals</div>
+              <div class="text-[10px] text-slate-500">3 waiting for you</div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-sm">👩</div>
+          </div>
+
+          <div class="space-y-2 mt-2">
+            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+              <div class="flex items-start gap-2">
+                <div class="text-xl">👦</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm text-slate-200"><span class="font-medium">Alex</span> finished a chore</div>
+                  <div class="text-xs text-slate-400 mt-0.5">"Make your bed"</div>
+                </div>
+              </div>
+              <div class="flex gap-1.5 mt-2.5">
+                <button class="flex-1 bg-emerald-600 rounded-md py-1.5 text-xs font-medium">✓ Approve</button>
+                <button class="flex-1 bg-slate-800 border border-slate-700 rounded-md py-1.5 text-xs">Reject</button>
+              </div>
+            </div>
+
+            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+              <div class="flex items-start gap-2">
+                <div class="text-xl">👧</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm text-slate-200"><span class="font-medium">Sam</span> did a bonus chore</div>
+                  <div class="text-xs text-slate-400 mt-0.5">"Empty the dishwasher"</div>
+                  <div class="text-[10px] text-amber-300 mt-0.5">+ 3 🪙 if approved</div>
+                </div>
+              </div>
+              <div class="flex gap-1.5 mt-2.5">
+                <button class="flex-1 bg-emerald-600 rounded-md py-1.5 text-xs font-medium">✓ Approve</button>
+                <button class="flex-1 bg-slate-800 border border-slate-700 rounded-md py-1.5 text-xs">Reject</button>
+              </div>
+            </div>
+
+            <div class="bg-brand-950/60 border border-brand-800/60 rounded-xl p-3">
+              <div class="flex items-start gap-2">
+                <div class="text-xl">🎁</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm text-slate-200"><span class="font-medium">Alex</span> wants a reward</div>
+                  <div class="text-xs text-slate-400 mt-0.5">"Movie night"</div>
+                  <div class="text-[10px] text-amber-300 mt-0.5">− 10 🪙 from balance</div>
+                </div>
+              </div>
+              <div class="flex gap-1.5 mt-2.5">
+                <button class="flex-1 bg-emerald-600 rounded-md py-1.5 text-xs font-medium">✓ Approve</button>
+                <button class="flex-1 bg-slate-800 border border-slate-700 rounded-md py-1.5 text-xs">Deny</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="order-1 md:order-2">
+      <div class="chip">👨‍👩‍👧 Parent view</div>
+      <h3 class="mt-4 text-2xl sm:text-3xl font-bold">One inbox for everything your kids ask for.</h3>
+      <p class="mt-4 text-slate-300">
+        Every finished chore, every bonus chore, and every reward request
+        lands in the same place. Approve or reject in one tap. Coins credit
+        or screen time unlocks the moment you tap approve — on your kids'
+        phones, on the kitchen tablet, everywhere.
+      </p>
+      <p class="mt-4 text-slate-400 text-sm">
+        Get a notification the second they tap "I did it." Handle it while
+        you're waiting in line at pickup. Or leave it for after dinner. Your
+        rules.
+      </p>
+    </div>
+  </div>
+
+  <!-- Screen 2: Reward catalog -->
+  <div class="mt-24 grid md:grid-cols-2 gap-12 items-center">
+    <div>
+      <div class="chip">🎁 You define the rewards</div>
+      <h3 class="mt-4 text-2xl sm:text-3xl font-bold">Your family, your reward menu.</h3>
+      <p class="mt-4 text-slate-300">
+        Set up rewards that mean something in your house. "Movie night."
+        "Pick dinner." "Stay up 30 minutes late." Give each one a coin
+        price. Kids can request from the menu when they've saved enough.
+      </p>
+      <p class="mt-4 text-slate-400 text-sm">
+        No more "can I have…?" ten times a day. If it's on the menu and
+        they have the coins, they can ask. If it's not, it's not up for
+        debate.
+      </p>
+    </div>
+    <div class="flex justify-center">
+      <div class="phone" aria-hidden="true">
+        <div class="phone-screen">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-semibold">Reward menu</div>
+              <div class="text-[10px] text-slate-500">5 rewards set up</div>
+            </div>
+            <button class="text-xs bg-brand-600 rounded-md px-2 py-1">+ Add</button>
+          </div>
+
+          <div class="space-y-2 mt-2">
+            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+              <div class="text-2xl">🎬</div>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-slate-200">Movie night</div>
+                <div class="text-[11px] text-slate-500">You pick the movie</div>
+              </div>
+              <div class="text-sm font-semibold text-amber-300">10 🪙</div>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+              <div class="text-2xl">🍕</div>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-slate-200">Pick dinner</div>
+                <div class="text-[11px] text-slate-500">Anything under $25</div>
+              </div>
+              <div class="text-sm font-semibold text-amber-300">15 🪙</div>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+              <div class="text-2xl">🌙</div>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-slate-200">Stay up 30 min late</div>
+                <div class="text-[11px] text-slate-500">School nights only</div>
+              </div>
+              <div class="text-sm font-semibold text-amber-300">12 🪙</div>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+              <div class="text-2xl">📚</div>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-slate-200">New book</div>
+                <div class="text-[11px] text-slate-500">Up to $15</div>
+              </div>
+              <div class="text-sm font-semibold text-amber-300">25 🪙</div>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+              <div class="text-2xl">🎮</div>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-slate-200">Extra screen hour</div>
+                <div class="text-[11px] text-slate-500">Weekends only</div>
+              </div>
+              <div class="text-sm font-semibold text-amber-300">20 🪙</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 3: Family wall dashboard on tablet -->
+  <div class="mt-24">
+    <div class="text-center max-w-2xl mx-auto">
+      <div class="chip">📺 The kitchen tablet</div>
+      <h3 class="mt-4 text-2xl sm:text-3xl font-bold">The always-on family scoreboard.</h3>
+      <p class="mt-4 text-slate-400">
+        Point a spare iPad or Android tablet at the family wall and pin
+        Chore Coin. Everyone can see today's chores, everyone's coins,
+        and what's coming up — no more "did you brush your teeth?"
+      </p>
+    </div>
+
+    <div class="mt-10 flex justify-center">
+      <div class="tablet" aria-hidden="true">
+        <div class="tablet-screen">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-lg font-bold flex items-center gap-2">🪙 The Rivera family</div>
+            <div class="text-sm text-slate-400">Tuesday, Aug 12</div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Alex tile -->
+            <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-2xl">👦</div>
+                <div>
+                  <div class="font-semibold">Alex</div>
+                  <div class="text-xs text-slate-500">age 11</div>
+                </div>
+                <div class="ml-auto text-right">
+                  <div class="text-2xl font-bold text-amber-300">47 🪙</div>
+                </div>
+              </div>
+              <div class="text-xs text-slate-400 mb-1.5">Today's chores</div>
+              <div class="h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+                <div class="h-full bg-emerald-500 rounded-full" style="width:60%"></div>
+              </div>
+              <div class="text-xs text-slate-300">3 of 5 done · 40 min screen time earned</div>
+            </div>
+            <!-- Sam tile -->
+            <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-2xl">👧</div>
+                <div>
+                  <div class="font-semibold">Sam</div>
+                  <div class="text-xs text-slate-500">age 8</div>
+                </div>
+                <div class="ml-auto text-right">
+                  <div class="text-2xl font-bold text-amber-300">22 🪙</div>
+                </div>
+              </div>
+              <div class="text-xs text-slate-400 mb-1.5">Today's chores</div>
+              <div class="h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+                <div class="h-full bg-emerald-500 rounded-full" style="width:100%"></div>
+              </div>
+              <div class="text-xs text-emerald-400">All 4 done! 60 min screen time earned 🎉</div>
+            </div>
+          </div>
+          <div class="mt-2 bg-brand-950/40 border border-brand-800/50 rounded-xl px-4 py-3 text-xs text-brand-200 flex items-center gap-2">
+            <span class="text-lg">💡</span>
+            <span>Sam finished all chores today — first time this week!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="mt-14 text-center text-sm text-slate-500 max-w-2xl mx-auto">
+    Real screenshots from a real family's install coming soon. These
+    mockups are accurate to how the app looks and behaves today.
+  </p>
+</section>
+
+<!-- ======================== WHY FAMILIES USE IT ==================== -->
 <section id="features" class="max-w-6xl mx-auto px-6 py-20 border-t border-slate-900">
-  <h2 class="text-3xl sm:text-4xl font-bold text-center">Everything a family needs, nothing you don't.</h2>
+  <div class="text-center max-w-2xl mx-auto">
+    <h2 class="text-3xl sm:text-4xl font-bold">Why families use it</h2>
+    <p class="mt-4 text-slate-400">
+      Every feature exists because a real family kept saying "wouldn't it
+      be great if…"
+    </p>
+  </div>
+
   <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
       <div class="text-3xl mb-3">⏰</div>
-      <h3 class="font-semibold text-lg">Base chores → screen time</h3>
+      <h3 class="font-semibold text-lg">Screen time you actually earn</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Finish all of today's base chores → earn 60 minutes of screen time.
-        Use-it-or-lose-it by default; parents can extend or carry over.
+        Finish all today's chores → unlock an hour of screen time. Simple
+        rule, no daily fights. Kids see exactly what they need to do to
+        earn it.
       </p>
     </div>
 
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
       <div class="text-3xl mb-3">🪙</div>
-      <h3 class="font-semibold text-lg">Bonus chores → coins</h3>
+      <h3 class="font-semibold text-lg">Coins for the extra stuff</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Per-chore coin values. Optional daily caps so nobody grinds
-        "empty the dishwasher" seven times before dinner.
+        Bonus chores earn coins. Emptying the dishwasher, taking out the
+        trash, vacuuming — set a coin value and a daily cap so no one grinds
+        the same chore all afternoon.
       </p>
     </div>
 
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
       <div class="text-3xl mb-3">🎁</div>
-      <h3 class="font-semibold text-lg">Rewards catalog</h3>
+      <h3 class="font-semibold text-lg">Rewards you set</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Parent-defined items — "Movie night, 10 coins" — that kids can
-        request. Every reward request lands in your approval queue
-        alongside chore approvals.
+        Movie night, dinner-picker, that new book they've been eyeing —
+        put anything on the reward menu with a coin price. Kids ask, you
+        approve, done.
       </p>
     </div>
 
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
       <div class="text-3xl mb-3">⚡</div>
-      <h3 class="font-semibold text-lg">Real-time everywhere</h3>
+      <h3 class="font-semibold text-lg">Real-time on every device</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Approve a chore on your phone; the kid's iPad updates in under a
-        second. Web Push tells parents about pending approvals and kids
-        about approvals and rejections.
+        Approve a chore on your phone; your kid's iPad updates in under a
+        second. Notifications tell you when there's something to approve,
+        and tell kids the second you approve it.
       </p>
     </div>
 
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
       <div class="text-3xl mb-3">📱</div>
-      <h3 class="font-semibold text-lg">PWA on every device</h3>
+      <h3 class="font-semibold text-lg">Works on the phones you have</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Add to Home Screen on iOS or Android. Works in Assistive Access
-        for younger kids. One family wall dashboard for the always-on
-        tablet in the kitchen.
+        iPhone, iPad, Android, laptop, kitchen tablet — Chore Coin runs in
+        the browser and installs to any home screen. No App Store, no
+        family sharing headaches, no in-app-purchase confusion.
       </p>
     </div>
 
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-      <div class="text-3xl mb-3">🔒</div>
-      <h3 class="font-semibold text-lg">Your data, your server</h3>
+      <div class="text-3xl mb-3">🧒</div>
+      <h3 class="font-semibold text-lg">Safe for young kids</h3>
       <p class="mt-2 text-sm text-slate-400">
-        <span class="text-slate-100 font-medium">We never see your family's data.</span>
-        Not the kids' names, not their chores, not their coins. Everything
-        lives in a single SQLite file on hardware you own. Back it up,
-        move it, delete it — it's yours.
+        Works inside iOS Assistive Access so your youngest can use their
+        first phone with just Chore Coin, Phone, Messages, and Music — no
+        wide-open internet.
       </p>
     </div>
 
@@ -152,115 +542,175 @@
 <section class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
   <div class="text-center max-w-3xl mx-auto">
     <div class="text-5xl mb-4">🏠</div>
-    <h2 class="text-3xl sm:text-4xl font-bold">Your family's data. Full stop.</h2>
+    <h2 class="text-3xl sm:text-4xl font-bold">Your family's data stays with your family.</h2>
     <p class="mt-6 text-lg text-slate-300">
-      Chore Coin runs on <span class="text-white font-semibold">your</span> Raspberry Pi
-      or <span class="text-white font-semibold">your</span> VPS.
-      Every chore, every coin, every kid's name lives in a single SQLite file
-      on hardware <span class="text-white font-semibold">you</span> control.
+      Chore Coin runs on a small computer <span class="text-white font-semibold">in your home</span>.
+      Every chore, every coin, every kid's name lives on
+      <span class="text-white font-semibold">your</span> hardware, in
+      <span class="text-white font-semibold">your</span> house.
+      We never see it because it never leaves.
     </p>
   </div>
 
   <div class="mt-14 grid gap-6 md:grid-cols-3">
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
       <div class="text-2xl mb-3">🚫</div>
-      <h3 class="font-semibold">We never see it</h3>
+      <h3 class="font-semibold">Zero data sharing</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Chore Coin doesn't phone home. No telemetry, no analytics, no
-        "usage" pings. Our server doesn't know your kids exist.
+        No accounts on our servers. No analytics, no ads, no "usage" pings.
+        Our company doesn't know your kids exist. Guaranteed by architecture,
+        not by policy.
       </p>
     </div>
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
       <div class="text-2xl mb-3">📦</div>
-      <h3 class="font-semibold">One-click backup</h3>
+      <h3 class="font-semibold">You own your data</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Download your whole family's data as a single file. Copy it to a
-        thumb drive, restore it on a new machine, done. No cloud
-        dependency, no vendor lock-in.
+        Download your whole family's history in one click. Save it to a
+        thumb drive, restore it on a new computer, keep it forever. No
+        cloud, no lock-in, no "we're shutting down" email.
       </p>
     </div>
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
       <div class="text-2xl mb-3">🔑</div>
-      <h3 class="font-semibold">License follows you</h3>
+      <h3 class="font-semibold">Your license, your control</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Move to a bigger server? Release the license on the old machine,
-        activate it on the new one. Your $20 buys the software, not a
-        lease on the hardware it runs on.
+        Move to a bigger computer? Release your license on the old one,
+        activate on the new one. Your $20 buys the software forever, not
+        a lease on a machine.
       </p>
     </div>
   </div>
-
-  <p class="mt-10 text-center text-sm text-slate-500 max-w-2xl mx-auto">
-    The only optional service that ever touches our servers is the $12/yr
-    subdomain add-on — and even then it's DNS-only. We create a
-    <code class="text-slate-300">yourname.chore-coin.family</code> record that points at
-    your instance. Your family's traffic goes directly from browser to
-    your server. We never proxy it.
-  </p>
 </section>
 
 <!-- ======================== HOW IT WORKS ======================== -->
-<section class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
-  <h2 class="text-3xl sm:text-4xl font-bold text-center">How it works</h2>
-  <div class="mt-14 grid gap-6 sm:grid-cols-3">
-    <div>
-      <div class="text-brand-400 text-sm font-medium">Step 1</div>
-      <h3 class="mt-1 font-semibold text-lg">Kids do chores</h3>
+<section id="how" class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
+  <h2 class="text-3xl sm:text-4xl font-bold text-center">How a chore turns into a coin</h2>
+  <p class="mt-4 text-center text-slate-400">Kid to app to parent to reward — in about 90 seconds.</p>
+
+  <div class="mt-14 grid gap-8 md:grid-cols-4">
+    <div class="text-center">
+      <div class="mx-auto w-14 h-14 rounded-full bg-brand-600/20 border border-brand-500/50 flex items-center justify-center text-2xl mb-4">1</div>
+      <h3 class="font-semibold text-lg">Kid taps "I did it"</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Each kid taps "I did it!" on their own phone or the family tablet.
-        Submission goes into your approval queue.
+        On their own phone or the kitchen tablet. Takes one tap.
       </p>
     </div>
-    <div>
-      <div class="text-brand-400 text-sm font-medium">Step 2</div>
-      <h3 class="mt-1 font-semibold text-lg">Parents approve</h3>
+    <div class="text-center">
+      <div class="mx-auto w-14 h-14 rounded-full bg-brand-600/20 border border-brand-500/50 flex items-center justify-center text-2xl mb-4">2</div>
+      <h3 class="font-semibold text-lg">You get a notification</h3>
       <p class="mt-2 text-sm text-slate-400">
-        You get a push notification. Approve or reject in one tap. Coins
-        credit or screen time unlocks instantly on every family device.
+        "Alex finished 'make your bed'." Approve or reject in one tap.
       </p>
     </div>
-    <div>
-      <div class="text-brand-400 text-sm font-medium">Step 3</div>
-      <h3 class="mt-1 font-semibold text-lg">Kids redeem</h3>
+    <div class="text-center">
+      <div class="mx-auto w-14 h-14 rounded-full bg-brand-600/20 border border-brand-500/50 flex items-center justify-center text-2xl mb-4">3</div>
+      <h3 class="font-semibold text-lg">Coins land instantly</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Coins turn into extra screen time, cash, or reward items you've
-        set up. Every transaction is a signed row in an append-only ledger
-        — the receipts are always there.
+        Every device in the family updates in under a second. Kid sees
+        the new balance immediately.
+      </p>
+    </div>
+    <div class="text-center">
+      <div class="mx-auto w-14 h-14 rounded-full bg-brand-600/20 border border-brand-500/50 flex items-center justify-center text-2xl mb-4">4</div>
+      <h3 class="font-semibold text-lg">Kid cashes in</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Extra screen time, allowance, or something from your reward menu.
+        Every transaction shows in the family ledger.
       </p>
     </div>
   </div>
 </section>
 
-<!-- ======================== INSTALL ======================== -->
+<!-- ======================== GETTING IT RUNNING ==================== -->
 <section id="install" class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
-  <h2 class="text-3xl sm:text-4xl font-bold text-center">Install in one command</h2>
-  <p class="mt-4 text-center text-slate-400">Works on any Mac (Intel or Apple Silicon), any Linux server, and every Raspberry Pi from Zero 2W through Pi 5. Requires a Chore Coin license.</p>
-
-  <div class="mt-10 bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-    <h3 class="font-semibold text-lg">The one-line installer</h3>
-    <p class="mt-2 text-sm text-slate-400">
-      Autodetects OS + CPU, verifies SHA-256, installs as a service that
-      starts on boot. Pass your license key inline, or the installer will
-      prompt for it if run in an interactive terminal.
-    </p>
-    <pre class="mt-4 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-emerald-300 overflow-x-auto">curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
-  CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh</pre>
-    <p class="mt-3 text-xs text-slate-500">
-      Uses sudo to install into /usr/local/bin and register the service.
-      Setup wizard opens in your browser to finish creating your admin +
-      first parent account.
-    </p>
-    <p class="mt-4 text-sm">
-      Don't have a license yet?
-      <a href="#pricing" class="text-brand-400 underline">Get one — $20 one-time</a>.
+  <div class="text-center max-w-2xl mx-auto">
+    <h2 class="text-3xl sm:text-4xl font-bold">Getting Chore Coin running</h2>
+    <p class="mt-4 text-slate-400">
+      It's a small app that needs a small computer at home to run on.
+      Here's what that looks like in plain language.
     </p>
   </div>
+
+  <div class="mt-14 grid gap-6 md:grid-cols-3">
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-xs text-brand-400 font-semibold uppercase tracking-wider">Step 1</div>
+      <h3 class="mt-2 font-semibold text-lg">Buy Chore Coin</h3>
+      <p class="mt-3 text-sm text-slate-400">
+        $20, one time. You'll get a license key in your email a few
+        seconds later. Save that email — you'll need the key next.
+      </p>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-xs text-brand-400 font-semibold uppercase tracking-wider">Step 2</div>
+      <h3 class="mt-2 font-semibold text-lg">Pick a computer</h3>
+      <p class="mt-3 text-sm text-slate-400">
+        Any computer at your house that stays on. A spare laptop works.
+        A Mac mini works. Or grab a <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/" class="text-brand-400 underline">$15 Raspberry Pi Zero 2W</a> —
+        it's the size of a pack of gum and uses less power than a nightlight.
+      </p>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-xs text-brand-400 font-semibold uppercase tracking-wider">Step 3</div>
+      <h3 class="mt-2 font-semibold text-lg">Paste one line, wait 30 seconds</h3>
+      <p class="mt-3 text-sm text-slate-400">
+        Open the Terminal app on that computer (it's built in). Paste the
+        install line from your welcome email and press Enter. When it's
+        done it prints a link — open it on your phone and finish setup in
+        the browser.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="mt-10 bg-slate-900/40 border border-slate-800 rounded-2xl p-6 sm:p-8">
+    <h3 class="font-semibold text-lg flex items-center gap-2">
+      <span class="text-xl">🤝</span> Not comfortable with the Terminal step?
+    </h3>
+    <p class="mt-3 text-sm text-slate-300">
+      That's the only technical part — after that, everything happens in
+      the app on your phone. If you don't have a tech-savvy friend to
+      help for 15 minutes, we'll do it for you.
+    </p>
+    <p class="mt-3 text-sm text-slate-400">
+      Email <a href="mailto:daniel@turnersystems.com?subject=Chore%20Coin%20install%20help" class="text-brand-400 underline">daniel@turnersystems.com</a>
+      and we'll set up a quick screen-share to get you going. No extra
+      charge — this is part of what your license buys.
+    </p>
+  </div>
+
+  <details class="mt-8 bg-slate-900/40 border border-slate-800 rounded-2xl p-6">
+    <summary class="font-semibold cursor-pointer text-slate-200 flex items-center gap-2">
+      <span class="text-xl">💻</span> For the tech-savvy: exact install command
+    </summary>
+    <div class="mt-4">
+      <p class="text-sm text-slate-400 mb-3">
+        Works on macOS + Linux (including Raspberry Pi). One line, one
+        license key. No Docker, no dependencies to install first.
+      </p>
+      <pre id="install-cmd" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-emerald-300 overflow-x-auto select-all whitespace-pre-wrap">curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
+  CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh</pre>
+      <div class="mt-3 flex items-center gap-2">
+        <button onclick="copyInstall()" class="copy-btn bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs">Copy</button>
+        <a href="https://github.com/danielhemp/chore-coin" class="text-xs text-slate-400 hover:text-slate-200 underline">View source on GitHub →</a>
+      </div>
+      <p class="mt-4 text-xs text-slate-500">
+        Detects your OS + CPU, verifies the download's checksum, installs
+        the app, and registers it as a background service so it starts on
+        boot. Setup wizard opens in your browser to create your admin +
+        first parent.
+      </p>
+    </div>
+  </details>
 </section>
 
 <!-- ======================== PRICING ======================== -->
 <section id="pricing" class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
-  <h2 class="text-3xl sm:text-4xl font-bold text-center">Simple pricing</h2>
-  <p class="mt-4 text-center text-slate-400">Buy the software once. Move it to any machine, any time. Add the subdomain if you want a memorable URL.</p>
+  <h2 class="text-3xl sm:text-4xl font-bold text-center">Simple, honest pricing</h2>
+  <p class="mt-4 text-center text-slate-400">Buy once, use forever. Get every future update free.</p>
 
   <div class="mt-14 grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
 
@@ -268,17 +718,18 @@
       <div class="absolute -top-3 right-4 bg-brand-600 text-xs font-medium px-2 py-1 rounded-full">Coming soon</div>
       <div class="text-sm text-brand-300 uppercase tracking-wider">Chore Coin</div>
       <div class="mt-2 text-4xl font-bold">$20<span class="text-lg font-normal text-slate-400"> once</span></div>
-      <div class="text-sm text-slate-400">— perpetual license, all future updates free</div>
+      <div class="text-sm text-slate-400">— no subscription, ever</div>
       <ul class="mt-6 space-y-3 text-sm text-slate-300">
         <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> The full app, no feature gates.</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Every future update, forever. In-app notifier tells you when a new version ships.</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Move your license between machines: release on the old server, activate on the new one.</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> One-click full-family backup + restore.</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> BUSL 1.1 source-visible. Read it, audit it, modify it for personal use.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Unlimited kids, chores, and rewards.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Every future update, free. Notified in the app when new versions ship.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Move to a new computer any time — release the license, activate on the new machine.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> One-click backup of your whole family's history.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Free install help if you get stuck.</li>
       </ul>
       <button disabled class="mt-8 block w-full text-center bg-slate-800/50 border border-slate-700 rounded-xl px-5 py-3 font-medium text-slate-500 cursor-not-allowed">Not yet on sale</button>
       <p class="mt-3 text-xs text-slate-500 text-center">
-        Launch coming soon —
+        Launching soon —
         <a href="mailto:daniel@turnersystems.com?subject=Notify%20me%20when%20Chore%20Coin%20launches" class="underline">email me to be notified</a>.
       </p>
     </div>
@@ -289,125 +740,138 @@
       <div class="mt-2 text-4xl font-bold">+$12<span class="text-lg font-normal text-slate-400">/year</span></div>
       <div class="text-sm text-slate-400">— e.g. <code class="text-slate-300">smiths.chore-coin.family</code></div>
       <ul class="mt-6 space-y-3 text-sm text-slate-300">
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> A memorable URL your family can bookmark forever.</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Point it at your home instance (Cloudflare Tunnel) or your VPS.</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> HTTPS with a real cert — no browser warnings.</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> DNS-only — your data never touches our infrastructure.</li>
-        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Cancel anytime. Point your subdomain elsewhere, or just keep using an IP.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> A memorable web address your family can bookmark forever.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Works from anywhere — grandma's house, the airport, the car.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Automatic HTTPS. No security warnings.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Your data never touches our servers — we only forward the address.</li>
+        <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Cancel anytime.</li>
       </ul>
       <button disabled class="mt-8 block w-full text-center bg-slate-800/50 border border-slate-700 rounded-xl px-5 py-3 font-medium text-slate-500 cursor-not-allowed">Not available yet</button>
       <p class="mt-3 text-xs text-slate-500 text-center">Requires an active Chore Coin license.</p>
     </div>
 
   </div>
-
-  <p class="mt-10 text-center text-sm text-slate-500 max-w-2xl mx-auto">
-    Chore Coin is source-visible under
-    <a href="https://github.com/danielhemp/chore-coin/blob/main/LICENSE" class="text-brand-400 underline">Business Source License 1.1</a>.
-    Free for personal + family use. Automatically converts to Apache 2.0 four years after each release.
-    Commercial repackaging or hosting-as-a-service requires a separate license — contact
-    <a href="mailto:daniel@turnersystems.com" class="text-brand-400 underline">daniel@turnersystems.com</a>.
-  </p>
 </section>
 
 <!-- ======================== FAQ ======================== -->
-<section class="max-w-3xl mx-auto px-6 py-20 border-t border-slate-900">
-  <h2 class="text-3xl sm:text-4xl font-bold text-center">Common questions</h2>
+<section id="faq" class="max-w-3xl mx-auto px-6 py-20 border-t border-slate-900">
+  <h2 class="text-3xl sm:text-4xl font-bold text-center">Common questions from parents</h2>
   <div class="mt-12 space-y-8">
 
     <div>
-      <h3 class="font-semibold text-lg">Do I need to know Docker?</h3>
+      <h3 class="font-semibold text-lg">I'm not technical. Can I really do this?</h3>
       <p class="mt-2 text-sm text-slate-400">
-        No. The one-line install script drops a single binary onto your
-        Mac, Linux server, or Raspberry Pi and registers it as a service
-        that starts at boot. No containers, no virtualization, no
-        terminal fluency required past the install command itself.
+        Yes, but be honest with yourself about the one technical step.
+        Installing Chore Coin means opening a program called Terminal on
+        a computer at home, pasting one line, and pressing Enter. If
+        you've never done that before, it takes about 5 minutes to figure
+        out. If it sounds like too much, ask a tech-friendly friend to
+        help for 15 minutes — or email us and we'll set up a screen-share
+        for free. Once installed, everything is in the app on your phone.
+        No terminal ever again.
       </p>
     </div>
 
     <div>
-      <h3 class="font-semibold text-lg">What hardware do I need?</h3>
+      <h3 class="font-semibold text-lg">What "computer at home" do I need?</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Very little. A <a href="https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/" class="text-brand-400 underline">Raspberry Pi Zero 2W</a> ($15)
-        is plenty for a family of any size — Chore Coin idles around 30MB of RAM.
-        Any Mac mini, spare Linux laptop, or NAS with Docker also works.
+        Anything that stays on. A spare laptop, a Mac mini, an old iMac
+        someone gave you, or a $15 Raspberry Pi Zero 2W (a tiny
+        credit-card-sized computer that plugs into a wall outlet). Chore
+        Coin uses less RAM than a browser tab and works on hardware from
+        the last decade.
       </p>
     </div>
 
     <div>
-      <h3 class="font-semibold text-lg">Can my family reach it when I'm not home?</h3>
+      <h3 class="font-semibold text-lg">Will it work on my kid's iPhone?</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Two options. Free: point a
-        <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/" class="text-brand-400 underline">Cloudflare Tunnel</a>
-        at your instance and open port 8090 to the world without touching
-        your router. Paid: pay $12/year for a <code class="text-slate-300">yourname.chore-coin.family</code> subdomain
-        that DNS-forwards to your instance — no tunnel management required.
+        Yes. Chore Coin runs in Safari or Chrome — no App Store download
+        needed. Open it once, then "Add to Home Screen" and it looks and
+        feels like any other app on the phone. Works the same on
+        Android and iPad.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-lg">Does it work in iOS Assistive Access?</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        Yes. If your youngest has their first phone locked down to just a
+        few apps, Chore Coin is one of the apps you can add. Perfect for
+        starting kids with structured phone use.
       </p>
     </div>
 
     <div>
       <h3 class="font-semibold text-lg">Where does my family's data live?</h3>
       <p class="mt-2 text-sm text-slate-400">
-        On the machine you install to. A single SQLite file. Back it up
-        by copying one file. Move to a different machine by copying that
-        same file. Never leaves your hardware.
+        On the computer at your house that you installed it on. Nothing
+        goes to us. Nothing goes to a cloud. If your internet is down,
+        the app still works on your home Wi-Fi.
       </p>
     </div>
 
     <div>
-      <h3 class="font-semibold text-lg">Does it work on iOS / Android?</h3>
+      <h3 class="font-semibold text-lg">Can the family use it from Grandma's house?</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Yes. Chore Coin is a Progressive Web App — open the URL in Safari
-        or Chrome, "Add to Home Screen," and it behaves like a native app.
-        Works in iOS Assistive Access for younger kids, supports native
-        Web Push for notifications on both platforms.
+        Two ways. Free: set up a Cloudflare Tunnel (a free service that
+        gives your home a public web address without opening any router
+        ports — takes about 10 minutes). Paid: add the $12/year subdomain
+        add-on and you'll get a nice memorable address like
+        <code class="text-slate-300">smiths.chore-coin.family</code>.
+        Either way, your data still lives at home; only the address
+        forwards.
       </p>
     </div>
 
     <div>
-      <h3 class="font-semibold text-lg">Can I contribute?</h3>
+      <h3 class="font-semibold text-lg">What if I want to switch computers later?</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Bug reports, feature requests, and PRs are all welcome on
-        <a href="https://github.com/danielhemp/chore-coin" class="text-brand-400 underline">GitHub</a>.
-        This is a side project maintained in evenings — response times
-        are days, not minutes.
+        Two clicks. On the old computer: Settings → Download family
+        backup. On the new computer: install Chore Coin, and during setup
+        pick "Restore from backup." Kids, chores, coins, full history —
+        all comes across. Then release the license on the old machine and
+        activate it on the new one.
       </p>
     </div>
 
     <div>
-      <h3 class="font-semibold text-lg">What if I want to move to a new machine?</h3>
+      <h3 class="font-semibold text-lg">Is $20 really the whole price?</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Two clicks. On the old machine: Settings → Download family backup. On
-        the new machine: install Chore Coin, and during the setup wizard
-        choose "Restore from backup" instead of "Fresh install." Your kids,
-        chores, coin balances, and full history come across intact. Then
-        release the license on the old machine and enter it on the new one
-        — same button, one paste.
+        Yes. $20 buys the app forever, on any computer, for any number of
+        kids and chores. Every future update is free — you'll get an
+        in-app notice when a new version is out. The only optional cost
+        is the $12/year subdomain add-on if you want a memorable web
+        address, which you can skip.
       </p>
     </div>
 
     <div>
-      <h3 class="font-semibold text-lg">Can I use my license on more than one server?</h3>
+      <h3 class="font-semibold text-lg">What happens if you go out of business?</h3>
       <p class="mt-2 text-sm text-slate-400">
-        One license = one active install. If you want a second family (say,
-        grandparents), buy a second license. If you want to upgrade
-        hardware, release the license on the old machine first; the new
-        one activates immediately. Nothing to email us, no support tickets.
-      </p>
-    </div>
-
-    <div>
-      <h3 class="font-semibold text-lg">How do I know when there's an update?</h3>
-      <p class="mt-2 text-sm text-slate-400">
-        The app polls a public announcements feed weekly and shows an
-        in-app banner when there's news — new versions, security notices,
-        breaking changes. No spam, no marketing. Everything else you can
-        watch on
-        <a href="https://github.com/danielhemp/chore-coin/releases" class="text-brand-400 underline">the GitHub releases page</a>.
+        Nothing to you. The app keeps running on your home computer with
+        no dependency on our servers. Your license stays valid, your data
+        stays yours, and the source code is public — anyone with the
+        skills can keep it working. This is the whole point of running
+        from home.
       </p>
     </div>
 
   </div>
+</section>
+
+<!-- ======================== FINAL CTA ======================== -->
+<section class="max-w-3xl mx-auto px-6 py-20 border-t border-slate-900 text-center">
+  <div class="text-5xl mb-4">🪙</div>
+  <h2 class="text-3xl sm:text-4xl font-bold">Ready to turn chores into coins?</h2>
+  <p class="mt-4 text-slate-400">
+    $20 once. All the features. Your family's data stays with your
+    family. Get notified the moment we launch.
+  </p>
+  <div class="mt-8">
+    <a href="mailto:daniel@turnersystems.com?subject=Notify%20me%20when%20Chore%20Coin%20launches" class="inline-block bg-brand-600 hover:bg-brand-500 rounded-xl px-8 py-4 font-medium text-lg">Notify me at launch</a>
+  </div>
+  <p class="mt-4 text-xs text-slate-500">One email at launch. Nothing else, ever.</p>
 </section>
 
 <!-- ======================== FOOTER ======================== -->
@@ -420,10 +884,9 @@
       <span>© 2026 Daniel Hemphill</span>
     </div>
     <nav class="flex items-center gap-5">
-      <a href="https://github.com/danielhemp/chore-coin" class="hover:text-slate-200">GitHub</a>
-      <a href="https://github.com/danielhemp/chore-coin/releases" class="hover:text-slate-200">Releases</a>
-      <a href="https://github.com/danielhemp/chore-coin/blob/main/LICENSE" class="hover:text-slate-200">License</a>
       <a href="mailto:daniel@turnersystems.com" class="hover:text-slate-200">Contact</a>
+      <a href="https://github.com/danielhemp/chore-coin" class="hover:text-slate-200">Source on GitHub</a>
+      <a href="https://github.com/danielhemp/chore-coin/blob/main/LICENSE" class="hover:text-slate-200">License</a>
     </nav>
   </div>
 </footer>

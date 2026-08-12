@@ -69,6 +69,30 @@ run: build ## Build and run against local pb_hooks + pb_migrations, data in /tmp
 	@mkdir -p /tmp/chorecoin-dev
 	./$(BINDIR)/$(BIN) serve --http=127.0.0.1:18090 --dir=/tmp/chorecoin-dev
 
+.PHONY: demo
+demo: build ## Fresh instance for demo/screenshots — wipes /tmp/chorecoin-demo, starts server, prints wizard credentials
+	@rm -rf /tmp/chorecoin-demo && mkdir -p /tmp/chorecoin-demo
+	@printf '\n\033[1m🪙  Chore Coin demo instance\033[0m\n\n'
+	@printf '  1. Open http://127.0.0.1:18090 in your browser\n'
+	@printf '  2. Complete the setup wizard with these credentials:\n\n'
+	@printf '       License key:     CHRC-DEMO-DEMO-DEMO-DEMO\n'
+	@printf '       Admin email:     admin@demo.local\n'
+	@printf '       Admin password:  demoadminpass123\n'
+	@printf '       Parent name:     Jordan\n'
+	@printf '       Parent email:    jordan@demo.local\n'
+	@printf '       Parent password: demopassword\n\n'
+	@printf '  3. Once the wizard finishes, run in another terminal:\n\n'
+	@printf '       make demo-data\n\n'
+	@printf '  Ctrl+C here when you are done to shut the server down.\n\n'
+	./$(BINDIR)/$(BIN) serve --http=127.0.0.1:18090 --dir=/tmp/chorecoin-demo
+
+.PHONY: demo-data
+demo-data: ## Seed the demo instance with the Rivera family (assumes `make demo` is running + wizard done)
+	@BASE_URL=http://127.0.0.1:18090 \
+	 PARENT_EMAIL=jordan@demo.local \
+	 PARENT_PASSWORD=demopassword \
+	 ./scripts/seed-demo.sh
+
 .PHONY: clean
 clean: ## Remove built binaries (keeps node_modules; use frontend-clean to nuke that too)
 	rm -rf $(BINDIR)/
