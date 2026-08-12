@@ -2,10 +2,10 @@
  * Chore Coin subdomain service — Cloudflare Worker.
  *
  * A tiny DNS-only service that lets Chore Coin customers register
- * *.chorecoin.family subdomains pointing at their self-hosted instance
+ * *.chore-coin.family subdomains pointing at their self-hosted instance
  * (home IP via Cloudflare Tunnel, VPS, whatever). We never see their
  * traffic — just create the DNS record. Storage is Cloudflare KV; DNS
- * mutations use the Cloudflare API on the chorecoin.family zone.
+ * mutations use the Cloudflare API on the chore-coin.family zone.
  *
  * Endpoints:
  *   GET  /                        — Simple HTML UI for registration/management
@@ -16,15 +16,15 @@
  *
  * Bindings required (see wrangler.toml):
  *   env.SUBDOMAINS          Cloudflare KV namespace
- *   env.FAMILY_ZONE_ID      Cloudflare zone ID of chorecoin.family
- *   env.CLOUDFLARE_API_TOKEN  Token with "Zone.DNS: Edit" on chorecoin.family
+ *   env.FAMILY_ZONE_ID      Cloudflare zone ID of chore-coin.family
+ *   env.CLOUDFLARE_API_TOKEN  Token with "Zone.DNS: Edit" on chore-coin.family
  *   env.LICENSE_PUBLIC_KEY  (optional) Ed25519 public key, base64. When set,
  *                           licenseKey must be a valid signed license from
  *                           the corresponding private key. When unset (v0),
  *                           any well-formatted key is accepted.
  */
 
-const FAMILY_DOMAIN = 'chorecoin.family'
+const FAMILY_DOMAIN = 'chore-coin.family'
 const LEASE_DAYS = 365 // subdomains expire 1 year after last renewal
 
 // Subdomains we reserve for ourselves and never issue.
@@ -33,7 +33,7 @@ const RESERVED = new Set([
   'help', 'mail', 'ftp', 'ssh', 'staging', 'dev', 'test', 'demo',
   'status', 'support', 'billing', 'account', 'accounts', 'ns', 'ns1',
   'ns2', 'mx', 'smtp', 'imap', 'pop', 'webmail', 'shop', 'store',
-  'root', 'chorecoin', 'chore-coin', 'family',
+  'root', 'chorecoin', 'chore-coin', 'family', 'chore', 'coin',
 ])
 
 export default {
@@ -321,7 +321,7 @@ const INDEX_HTML = `<!DOCTYPE html>
     <div class="text-5xl mb-3">🪙</div>
     <h1 class="text-3xl font-bold">Chore Coin subdomains</h1>
     <p class="mt-3 text-sm text-slate-400">
-      Register a <code class="text-slate-200">yourname.chorecoin.family</code> subdomain
+      Register a <code class="text-slate-200">yourname.chore-coin.family</code> subdomain
       that points at your self-hosted Chore Coin instance.
       DNS-only — your traffic never touches our servers.
     </p>
@@ -334,7 +334,7 @@ const INDEX_HTML = `<!DOCTYPE html>
       <label class="block text-xs uppercase tracking-wide text-slate-400 mb-1">Subdomain</label>
       <div class="flex items-stretch">
         <input id="reg-subdomain" placeholder="smiths" class="flex-1 bg-slate-950 border border-slate-700 rounded-l-lg px-3 py-2 text-sm">
-        <span class="bg-slate-800 border border-slate-700 border-l-0 rounded-r-lg px-3 py-2 text-sm text-slate-400">.chorecoin.family</span>
+        <span class="bg-slate-800 border border-slate-700 border-l-0 rounded-r-lg px-3 py-2 text-sm text-slate-400">.chore-coin.family</span>
       </div>
       <p class="mt-1 text-xs text-slate-500">2–30 chars, lowercase alphanumeric + hyphens.</p>
     </div>
@@ -405,11 +405,11 @@ async function check() {
   const r = await fetch('/api/status/' + encodeURIComponent(s))
   const d = await r.json()
   if (d.registered) {
-    out.innerHTML = '<b>' + d.subdomain + '.chorecoin.family</b> is registered — points at <code>' + d.target + '</code>. Expires ' + new Date(d.expiresAt).toLocaleDateString() + '.'
+    out.innerHTML = '<b>' + d.subdomain + '.chore-coin.family</b> is registered — points at <code>' + d.target + '</code>. Expires ' + new Date(d.expiresAt).toLocaleDateString() + '.'
   } else if (d.error) {
     out.textContent = d.error
   } else {
-    out.innerHTML = '<b>' + s + '.chorecoin.family</b> is available.'
+    out.innerHTML = '<b>' + s + '.chore-coin.family</b> is available.'
   }
 }
 </script>
