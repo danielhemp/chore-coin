@@ -87,13 +87,15 @@
   <h3>What's in this guide</h3>
   <ol>
     <li><a href="#before">Before you start — what you need</a></li>
-    <li><a href="#mac">Part 1a — On a Mac</a></li>
-    <li><a href="#linux">Part 1b — On a Raspberry Pi or Linux computer</a></li>
-    <li><a href="#install">Part 2 — Run the install command</a></li>
-    <li><a href="#setup">Part 3 — Finish setup in your browser</a></li>
-    <li><a href="#kids">Part 4 — Add your kids</a></li>
-    <li><a href="#chores">Part 5 — Add your first chores</a></li>
-    <li><a href="#phones">Part 6 — Put Chore Coin on everyone's phone</a></li>
+    <li><a href="#pick-a-path">Two ways to install: easy vs. classic</a></li>
+    <li><a href="#easy-mac">Easy path — Mac (double-click launcher)</a></li>
+    <li><a href="#easy-windows">Easy path — Windows (double-click launcher)</a></li>
+    <li><a href="#easy-pi">Easy path — Raspberry Pi / Linux (double-click launcher)</a></li>
+    <li><a href="#classic">Classic path — Terminal command (for the tech-comfortable)</a></li>
+    <li><a href="#setup">Finish setup in your browser</a></li>
+    <li><a href="#kids">Add your kids</a></li>
+    <li><a href="#chores">Add your first chores</a></li>
+    <li><a href="#phones">Put Chore Coin on everyone's phone</a></li>
     <li><a href="#trouble">If something goes wrong</a></li>
     <li><a href="#help">Getting more help</a></li>
   </ol>
@@ -124,111 +126,167 @@
   </div>
 </div>
 
-<p>Once you've picked which computer you'll run Chore Coin on, jump to the section that matches it:</p>
+<!-- =============================================================== -->
+<h2 id="pick-a-path">2. Two ways to install: easy vs. classic</h2>
+
+<p>There are two ways to get Chore Coin running. Pick whichever feels less scary:</p>
+
 <ul>
-  <li>If it's a <strong>Mac</strong> → skip to <a href="#mac">Part 1a</a>.</li>
-  <li>If it's a <strong>Raspberry Pi or Linux computer</strong> → skip to <a href="#linux">Part 1b</a>.</li>
+  <li><strong>Easy path — a launcher file you double-click.</strong> Works on Mac, Windows, and Raspberry Pi. You'll see one "downloaded from the internet" security warning the first time (both macOS and Windows do this for anything unsigned) — the guide below walks you through clicking past it in about 5 seconds. After that it's just: download, double-click, done.</li>
+  <li><strong>Classic path — one command in Terminal.</strong> No security warning to click past. Slightly more intimidating because you're staring at a text-only prompt. Fine if you've used Terminal before.</li>
+</ul>
+
+<p>Both paths do exactly the same thing under the hood. Both take about the same amount of time. Pick the one you're more comfortable with:</p>
+
+<ul>
+  <li>Installing on a <strong>Mac</strong>? → jump to <a href="#easy-mac">easy path — Mac</a>.</li>
+  <li>Installing on a <strong>Windows PC</strong>? → jump to <a href="#easy-windows">easy path — Windows</a>.</li>
+  <li>Installing on a <strong>Raspberry Pi or Linux computer</strong>? → jump to <a href="#easy-pi">easy path — Pi</a>.</li>
+  <li>Prefer the classic Terminal command? → jump to <a href="#classic">classic path</a>.</li>
 </ul>
 
 <!-- =============================================================== -->
-<h2 id="mac">2. Part 1a — On a Mac: open Terminal</h2>
+<h2 id="easy-mac">3. Easy path — Mac (double-click launcher)</h2>
 
-<p>Terminal is an app that's already installed on every Mac. It looks intimidating but you'll only use it for one command.</p>
+<p>You'll download one small file, double-click it, and answer one prompt. Total time: under a minute.</p>
 
-<h3>To open Terminal:</h3>
+<h3>Step 1 — Download the launcher</h3>
+<p>Click this link on your Mac: <a href="https://chore-coin.app/download/install-chorecoin-mac.command">install-chorecoin-mac.command</a></p>
+<p>Safari will download it to your Downloads folder. If Safari asks whether to allow the download, click <strong>Allow</strong>.</p>
 
-<ol>
-  <li>Press <span class="kbd">⌘</span> + <span class="kbd">Space</span> on your keyboard. A search box appears in the middle of the screen.</li>
-  <li>Type the word <strong>terminal</strong> and press <span class="kbd">Return</span>.</li>
-  <li>A window opens with white or black text on a dark background, and a prompt that looks like:
-    <pre>yourname@yourmacs-name ~ %</pre>
-  </li>
-</ol>
-
-<div class="callout ok">
-  <div class="icon">✓</div>
-  <div>
-    <p><strong>That's it.</strong> Terminal is now open. Leave the window there — you'll paste one line into it in a moment.</p>
-    <p>Skip to <a href="#install">Part 2</a>.</p>
-  </div>
-</div>
-
-<!-- =============================================================== -->
-<h2 id="linux">3. Part 1b — On a Raspberry Pi or Linux computer</h2>
-
-<p>You need to get to a terminal (also called a "command line" or "shell"). There are two ways depending on your setup.</p>
-
-<h3>If the computer has a keyboard + monitor plugged in:</h3>
-<p>Open the "Terminal" app from the applications menu — usually under Accessories or System Tools. On Raspberry Pi OS the icon is a black square in the top-right of the desktop.</p>
-
-<h3>If the computer is "headless" (no monitor):</h3>
-<p>You'll connect from another computer using SSH.</p>
-<ol>
-  <li>Find the Raspberry Pi's IP address. Easiest: check your Wi-Fi router's admin page for connected devices; it usually shows up as "raspberrypi."</li>
-  <li>From another Mac or Linux computer, open Terminal and type:
-    <pre>ssh pi@[the-ip-address]</pre>
-    Replace <code>[the-ip-address]</code> with what you found (e.g. <code>ssh pi@192.168.1.42</code>).</li>
-  <li>Enter the Pi's password when asked (default on fresh Raspberry Pi OS is <code>raspberry</code>).</li>
-</ol>
-
-<div class="callout ok">
-  <div class="icon">✓</div>
-  <div>
-    <p><strong>You should now see a prompt</strong> that ends in <code>$</code> or <code>#</code>. Continue to <a href="#install">Part 2</a>.</p>
-  </div>
-</div>
-
-<!-- =============================================================== -->
-<h2 id="install">4. Part 2 — Run the install command</h2>
-
-<p>This is the one command you'll paste. It downloads Chore Coin, installs it, and starts it up as a background service that runs even after you close Terminal.</p>
-
-<p><strong>Copy this whole thing:</strong></p>
-
-<pre>curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
-  CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh</pre>
+<h3>Step 2 — Double-click to run it</h3>
+<p>Open your Downloads folder and double-click <code>install-chorecoin-mac.command</code>.</p>
 
 <div class="callout warn">
-  <div class="icon">⚠️</div>
+  <div class="icon">🛡️</div>
   <div>
-    <p><strong>Before you paste:</strong> replace <code>CHRC-XXXX-XXXX-XXXX-XXXX</code> with your real license key from the welcome email. Everything else stays the same. Keep the backslash and the newline in place.</p>
+    <p><strong>You'll see this warning the first time:</strong></p>
+    <p><em>"install-chorecoin-mac.command" cannot be opened because it is from an unidentified developer.</em></p>
+    <p>This is macOS being cautious about any file downloaded from the internet. Chore Coin isn't a Mac App Store app (that would add a $99/year Apple fee to your $20 price), so this warning is expected. Here's how to click past it:</p>
+    <ol>
+      <li>Click <strong>Done</strong> or <strong>OK</strong> to close the warning.</li>
+      <li>Go to <strong>System Settings → Privacy &amp; Security</strong>.</li>
+      <li>Scroll down to the security section. You'll see a message: <em>"install-chorecoin-mac.command was blocked to protect your Mac."</em></li>
+      <li>Click <strong>Open Anyway</strong> next to that message.</li>
+      <li>Confirm with your Mac password or Touch ID.</li>
+    </ol>
+    <p>On older macOS versions (Monterey and earlier) you can instead <strong>right-click</strong> the file → <strong>Open</strong> → click <strong>Open</strong> in the confirmation dialog. Same result, fewer clicks.</p>
+    <p>You only need to do this once. After allowing it, the file will double-click normally forever.</p>
   </div>
 </div>
 
-<h3>To paste and run:</h3>
+<h3>Step 3 — Follow the on-screen prompts</h3>
+<p>A Terminal window opens showing:</p>
+<pre>🪙  Chore Coin — Mac Installer
+
+  This will download and install Chore Coin on your Mac.
+  It takes about 30 seconds. You'll see progress as it works.
+
+  Press Return to begin, or close this window to cancel.</pre>
+<p>Press <span class="kbd">Return</span>, paste your license key from the welcome email, press <span class="kbd">Return</span> again, and wait about 30 seconds. Skip to <a href="#setup">"Finish setup in your browser"</a> when it's done.</p>
+
+<!-- =============================================================== -->
+<h2 id="easy-windows">4. Easy path — Windows (double-click launcher)</h2>
+
+<p>Works on Windows 10 (recent build) and Windows 11. Same idea as Mac — download, double-click, answer prompts.</p>
+
+<h3>Step 1 — Download the launcher</h3>
+<p>Click this link on your Windows PC: <a href="https://chore-coin.app/download/install-chorecoin-windows.bat">install-chorecoin-windows.bat</a></p>
+<p>Edge, Chrome, or Firefox will save it to your Downloads folder. If your browser warns that "this file may harm your computer," click <strong>Keep</strong> or <strong>Keep anyway</strong>. It won't — it's just a plain-text script (you can open it in Notepad and read it yourself if you want).</p>
+
+<h3>Step 2 — Double-click to run it</h3>
+<p>Open your Downloads folder and double-click <code>install-chorecoin-windows.bat</code>.</p>
+
+<div class="callout warn">
+  <div class="icon">🛡️</div>
+  <div>
+    <p><strong>You'll see this warning the first time:</strong></p>
+    <p><em>"Windows protected your PC. Microsoft Defender SmartScreen prevented an unrecognized app from starting."</em></p>
+    <p>This is Windows SmartScreen being cautious about any file downloaded from the internet. Same reason as Mac — we're not paying for an EV code-signing certificate ($300/year) to keep your license price at $20. Here's how to click past it:</p>
+    <ol>
+      <li>Click <strong>More info</strong> (the small link near the top of the warning).</li>
+      <li>Click <strong>Run anyway</strong> (the button that appears at the bottom).</li>
+    </ol>
+    <p>You only need to do this once. After allowing it, the file will double-click normally forever.</p>
+  </div>
+</div>
+
+<h3>Step 3 — Follow the on-screen prompts</h3>
+<p>A Command Prompt window opens showing the welcome screen. Press any key, paste your license key from the welcome email, press <span class="kbd">Enter</span>, and wait about 30 seconds. Skip to <a href="#setup">"Finish setup in your browser"</a> when it's done.</p>
+
+<div class="callout tip">
+  <div class="icon">💡</div>
+  <div>
+    <p><strong>Windows-specific note:</strong> Chore Coin will start automatically every time you log in to Windows. If you sign out of Windows or your computer restarts, Chore Coin will start again the next time you log in. If you want Chore Coin to keep running while nobody is logged in, you'll need a slightly different setup — email us and we'll help.</p>
+  </div>
+</div>
+
+<!-- =============================================================== -->
+<h2 id="easy-pi">5. Easy path — Raspberry Pi / Linux (double-click launcher)</h2>
+
+<p>Works best on Raspberry Pi OS Desktop, Ubuntu, or any Linux with a graphical file manager. If your Pi is headless (no screen), see the <a href="#classic">classic Terminal path</a> instead — it's faster over SSH anyway.</p>
+
+<h3>Step 1 — Download the launcher</h3>
+<p>Right-click <a href="https://chore-coin.app/download/install-chorecoin-pi.sh">install-chorecoin-pi.sh</a> and choose <strong>Save link as…</strong>. Save it to your Downloads or Desktop.</p>
+
+<h3>Step 2 — Make it executable</h3>
+<p>Right-click the downloaded file → <strong>Properties</strong> → <strong>Permissions</strong> tab → check <strong>Allow executing file as program</strong> → close.</p>
+<p>(On Ubuntu the toggle is named "Execute: Allow executing file as program." Similar wording elsewhere.)</p>
+
+<h3>Step 3 — Double-click to run it</h3>
+<p>Double-click the file. Raspberry Pi OS will ask what to do — pick <strong>Execute in Terminal</strong>. On other Linux distros it may just run.</p>
+
+<div class="callout tip">
+  <div class="icon">💡</div>
+  <div>
+    <p>If double-clicking opens the script in a text editor instead of running it, right-click and pick <strong>Open in Terminal</strong> or <strong>Run in Terminal</strong> from the menu.</p>
+  </div>
+</div>
+
+<h3>Step 4 — Follow the on-screen prompts</h3>
+<p>A Terminal window opens with the Chore Coin welcome screen. Press <span class="kbd">Return</span>, paste your license key, press <span class="kbd">Return</span> again, and wait about 30 seconds. Skip to <a href="#setup">"Finish setup in your browser"</a>.</p>
+
+<!-- =============================================================== -->
+<h2 id="classic">6. Classic path — Terminal command</h2>
+
+<p>Prefer to skip the download-and-double-click and just paste a command? This is the same install, done in one line.</p>
+
+<h3>On a Mac:</h3>
 <ol>
-  <li>Click the Terminal window to focus it.</li>
-  <li>Paste the command:
-    <ul>
-      <li>On Mac: <span class="kbd">⌘</span> + <span class="kbd">V</span></li>
-      <li>On Linux/Pi: <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">V</span></li>
-    </ul>
+  <li>Press <span class="kbd">⌘</span> + <span class="kbd">Space</span>, type <strong>terminal</strong>, press <span class="kbd">Return</span>.</li>
+  <li>Paste this line (after replacing the fake key with your real one):
+    <pre>curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
+  CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh</pre>
   </li>
-  <li>Press <span class="kbd">Return</span>.</li>
-  <li>You may be asked for your Mac/Linux password (the one you use to log in). Type it and press Return. <em>You won't see any dots or characters appear as you type — that's normal for Terminal.</em></li>
+  <li>Press <span class="kbd">Return</span>. Enter your Mac password if asked.</li>
 </ol>
 
-<h3>What you'll see:</h3>
-<p>Text will scroll by for 20-40 seconds. You'll see messages like:</p>
-<pre>Chore Coin installer
-  ✓ license key accepted
-Platform: darwin/arm64 → chorecoin-darwin-arm64
-Finding the latest release...
-  ✓ Release v0.1.0
-Downloading...
-  ✓ checksum verified
-  ✓ installed /usr/local/bin/chorecoin
-  ✓ data directory /Users/you/Library/Application Support/chorecoin
-  ✓ license key staged for setup wizard
-  ✓ launchd agent loaded
-Chore Coin is running.
+<h3>On a Raspberry Pi or Linux computer:</h3>
+<ol>
+  <li>Open Terminal (or SSH in). Paste the same command above.</li>
+  <li>Press <span class="kbd">Return</span>. Enter your password if asked.</li>
+</ol>
+
+<h3>On Windows:</h3>
+<ol>
+  <li>Press <span class="kbd">⊞</span> (Windows key), type <strong>powershell</strong>, press <span class="kbd">Enter</span>.</li>
+  <li>Paste these two lines together (replace the fake key):
+    <pre>$env:CHORECOIN_LICENSE = 'CHRC-XXXX-XXXX-XXXX-XXXX'
+iwr -UseBasicParsing https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.ps1 | iex</pre>
+  </li>
+  <li>Press <span class="kbd">Enter</span>.</li>
+</ol>
+
+<h3>What you'll see (all platforms):</h3>
+<p>Text scrolls by for about 30 seconds. You'll see messages like <code>✓ license key accepted</code>, <code>✓ checksum verified</code>, <code>✓ installed</code>, and finally:</p>
+<pre>Chore Coin is running.
 
   Open in your browser:  http://127.0.0.1:8090</pre>
 
 <div class="callout ok">
   <div class="icon">✓</div>
   <div>
-    <p><strong>You're 90% done.</strong> The last line tells you the address to open in your browser. Copy that URL and continue to Part 3.</p>
+    <p><strong>You're 90% done.</strong> Copy that URL and continue to the next section.</p>
   </div>
 </div>
 
@@ -240,7 +298,7 @@ Chore Coin is running.
 </div>
 
 <!-- =============================================================== -->
-<h2 id="setup">5. Part 3 — Finish setup in your browser</h2>
+<h2 id="setup">7. Finish setup in your browser</h2>
 
 <p>Open the address the installer printed (usually <code>http://127.0.0.1:8090</code>) in Safari, Chrome, or Firefox. You'll see a welcome screen with three steps.</p>
 
@@ -272,7 +330,7 @@ Chore Coin is running.
 </div>
 
 <!-- =============================================================== -->
-<h2 id="kids">6. Part 4 — Add your kids</h2>
+<h2 id="kids">8. Add your kids</h2>
 
 <ol>
   <li>Tap the <strong>gear icon</strong> (⚙️) in the top right, then <strong>Kids</strong>.</li>
@@ -290,7 +348,7 @@ Chore Coin is running.
 <p>Repeat for each kid. You can go back and change any of this later.</p>
 
 <!-- =============================================================== -->
-<h2 id="chores">7. Part 5 — Add your first chores</h2>
+<h2 id="chores">9. Add your first chores</h2>
 
 <p>There are two kinds of chores:</p>
 
@@ -331,7 +389,7 @@ Chore Coin is running.
 </div>
 
 <!-- =============================================================== -->
-<h2 id="phones">8. Part 6 — Put Chore Coin on everyone's phone</h2>
+<h2 id="phones">10. Put Chore Coin on everyone's phone</h2>
 
 <p>Chore Coin isn't in the App Store — you install it by adding a shortcut from your browser. It's just as good, and skips App Store approvals and family sharing headaches.</p>
 
@@ -360,7 +418,7 @@ Chore Coin is running.
 </div>
 
 <!-- =============================================================== -->
-<h2 id="trouble">9. If something goes wrong</h2>
+<h2 id="trouble">11. If something goes wrong</h2>
 
 <p>Nine times out of ten it's one of these. Try the fix, then re-run the install command.</p>
 
@@ -425,7 +483,7 @@ Chore Coin is running.
 </div>
 
 <!-- =============================================================== -->
-<h2 id="help">10. Getting more help</h2>
+<h2 id="help">12. Getting more help</h2>
 
 <p>If your problem isn't in the troubleshooting list above:</p>
 

@@ -3,8 +3,8 @@
 # Two-stage build: (1) Vite compiles the PWA frontend into frontend/dist/,
 # (2) go build embeds that dist plus pb_hooks/ and pb_migrations/ into the
 # chorecoin binary. The `build` target orchestrates both; the release matrix
-# cross-compiles the same fully-embedded artifact for macOS + Linux (arm64,
-# amd64, and armv7 for older Pis).
+# cross-compiles the same fully-embedded artifact for macOS, Linux (arm64,
+# amd64, and armv7 for older Pis), and Windows (amd64 + arm64).
 #
 # CGO is disabled everywhere so PocketBase uses the pure-Go modernc.org/sqlite
 # driver — no C toolchain needed on the build host, cross-compile from any OS.
@@ -60,8 +60,16 @@ linux-amd64: frontend ## Build for Linux x86_64 (most VPS providers)
 linux-armv7: frontend ## Build for older 32-bit Raspberry Pis (Pi 2/3, Zero W)
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 $(GO) build -ldflags="$(LDFLAGS)" -o $(BINDIR)/$(BIN)-linux-armv7 $(PKG)
 
+.PHONY: windows-amd64
+windows-amd64: frontend ## Build for Windows x86_64
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GO) build -ldflags="$(LDFLAGS)" -o $(BINDIR)/$(BIN)-windows-amd64.exe $(PKG)
+
+.PHONY: windows-arm64
+windows-arm64: frontend ## Build for Windows ARM64 (Surface Pro X, newer WoA devices)
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 $(GO) build -ldflags="$(LDFLAGS)" -o $(BINDIR)/$(BIN)-windows-arm64.exe $(PKG)
+
 .PHONY: release
-release: darwin-arm64 darwin-amd64 linux-arm64 linux-amd64 linux-armv7 ## Build all release targets
+release: darwin-arm64 darwin-amd64 linux-arm64 linux-amd64 linux-armv7 windows-amd64 windows-arm64 ## Build all release targets
 	@ls -lh $(BINDIR)/
 
 .PHONY: run

@@ -661,32 +661,59 @@
 
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
       <div class="text-xs text-brand-400 font-semibold uppercase tracking-wider">Step 3</div>
-      <h3 class="mt-2 font-semibold text-lg">Paste one line, wait 30 seconds</h3>
+      <h3 class="mt-2 font-semibold text-lg">Download &amp; double-click</h3>
       <p class="mt-3 text-sm text-slate-400">
-        Open the Terminal app on that computer (it's built in). Paste the
-        install line from your welcome email and press Enter. When it's
-        done it prints a link — open it on your phone and finish setup in
-        the browser.
+        Pick the launcher for your computer below, download it, paste
+        your license key when it asks, and wait about 30 seconds. When
+        it's done it opens Chore Coin in your browser to finish setup.
       </p>
     </div>
 
   </div>
+
+  <!-- Download launchers, one per OS -->
+  <div class="mt-10 grid gap-4 sm:grid-cols-3">
+    <a href="/download/install-chorecoin-mac.command" download class="bg-slate-900/60 hover:bg-slate-900 border border-slate-800 hover:border-brand-600 rounded-2xl p-5 flex items-center gap-4 transition">
+      <div class="text-4xl">🍎</div>
+      <div class="flex-1">
+        <div class="font-semibold text-slate-100">Download for Mac</div>
+        <div class="text-xs text-slate-400 mt-0.5">.command file · macOS 11+</div>
+      </div>
+    </a>
+    <a href="/download/install-chorecoin-windows.bat" download class="bg-slate-900/60 hover:bg-slate-900 border border-slate-800 hover:border-brand-600 rounded-2xl p-5 flex items-center gap-4 transition">
+      <div class="text-4xl">🪟</div>
+      <div class="flex-1">
+        <div class="font-semibold text-slate-100">Download for Windows</div>
+        <div class="text-xs text-slate-400 mt-0.5">.bat file · Windows 10/11</div>
+      </div>
+    </a>
+    <a href="/download/install-chorecoin-pi.sh" download class="bg-slate-900/60 hover:bg-slate-900 border border-slate-800 hover:border-brand-600 rounded-2xl p-5 flex items-center gap-4 transition">
+      <div class="text-4xl">🥧</div>
+      <div class="flex-1">
+        <div class="font-semibold text-slate-100">Download for Pi / Linux</div>
+        <div class="text-xs text-slate-400 mt-0.5">.sh file · Raspberry Pi, Ubuntu, Debian</div>
+      </div>
+    </a>
+  </div>
+  <p class="mt-4 text-xs text-slate-500 text-center">
+    Both Mac and Windows will show a one-time security warning for the launcher (it's not signed by Apple/Microsoft — that would add hundreds of dollars per year to your $20 price). The <a href="/install-guide.html" class="text-brand-400 underline">install guide</a> shows you exactly what to click to allow it.
+  </p>
 
   <div class="mt-10 bg-slate-900/40 border border-slate-800 rounded-2xl p-6 sm:p-8">
     <h3 class="font-semibold text-lg flex items-center gap-2">
       <span class="text-xl">📘</span> Every license comes with a step-by-step visual guide
     </h3>
     <p class="mt-3 text-sm text-slate-300">
-      When you buy Chore Coin, you get a plain-English install guide with
-      screenshots for every step — opening Terminal, pasting the
-      command, finishing the setup wizard, adding your kids, adding your
-      first chores. Designed for parents who have never touched Terminal
-      before.
+      When you buy Chore Coin, you get a <a href="/install-guide.html" class="text-brand-400 underline">plain-English install guide</a>
+      with numbered steps for every part — downloading the launcher, clicking
+      past the security warning, finishing setup in your browser, adding
+      your kids, adding your first chores. Designed for parents who have
+      never touched Terminal or Command Prompt before.
     </p>
     <p class="mt-3 text-sm text-slate-400">
-      Guide also covers the most common install hiccups and how to fix
-      them yourself in under a minute. If something in the guide isn't
-      clear, email <a href="mailto:daniel@turnersystems.com?subject=Chore%20Coin%20install%20guide%20feedback" class="text-brand-400 underline">daniel@turnersystems.com</a> —
+      The guide also covers the most common install hiccups and how to fix
+      them yourself in under a minute. If something isn't clear, email
+      <a href="mailto:daniel@turnersystems.com?subject=Chore%20Coin%20install%20guide%20feedback" class="text-brand-400 underline">daniel@turnersystems.com</a> —
       we improve the guide every time a real family gets stuck.
     </p>
   </div>
@@ -697,20 +724,28 @@
     </summary>
     <div class="mt-4">
       <p class="text-sm text-slate-400 mb-3">
-        Works on macOS + Linux (including Raspberry Pi). One line, one
-        license key. No Docker, no dependencies to install first.
+        No download-and-double-click, just paste-and-go. All three commands
+        do exactly the same thing as the launchers above.
       </p>
+
+      <div class="text-xs text-slate-500 mt-4 mb-1 uppercase tracking-wider">macOS / Linux / Raspberry Pi — in Terminal:</div>
       <pre id="install-cmd" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-emerald-300 overflow-x-auto select-all whitespace-pre-wrap">curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
   CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh</pre>
+
+      <div class="text-xs text-slate-500 mt-4 mb-1 uppercase tracking-wider">Windows — in PowerShell:</div>
+      <pre id="install-cmd-win" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-emerald-300 overflow-x-auto select-all whitespace-pre-wrap">$env:CHORECOIN_LICENSE = 'CHRC-XXXX-XXXX-XXXX-XXXX'
+iwr -UseBasicParsing https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.ps1 | iex</pre>
+
       <div class="mt-3 flex items-center gap-2">
-        <button onclick="copyInstall()" class="copy-btn bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs">Copy</button>
+        <button onclick="copyInstall()" class="copy-btn bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs">Copy Mac/Linux</button>
+        <button onclick="copyInstallWin()" class="copy-btn bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs">Copy Windows</button>
         <a href="https://github.com/danielhemp/chore-coin" class="text-xs text-slate-400 hover:text-slate-200 underline">View source on GitHub →</a>
       </div>
       <p class="mt-4 text-xs text-slate-500">
         Detects your OS + CPU, verifies the download's checksum, installs
         the app, and registers it as a background service so it starts on
-        boot. Setup wizard opens in your browser to create your admin +
-        first parent.
+        boot / at logon. Setup wizard opens in your browser to create your
+        admin + first parent.
       </p>
     </div>
   </details>
@@ -785,11 +820,11 @@
     <div>
       <h3 class="font-semibold text-lg">What "computer at home" do I need?</h3>
       <p class="mt-2 text-sm text-slate-400">
-        Anything that stays on. A spare laptop, a Mac mini, an old iMac
-        someone gave you, or a $15 Raspberry Pi Zero 2W (a tiny
-        credit-card-sized computer that plugs into a wall outlet). Chore
-        Coin uses less RAM than a browser tab and works on hardware from
-        the last decade.
+        Anything that stays on and runs Mac, Windows 10/11, or Linux. A
+        spare laptop, a Mac mini, an old iMac someone gave you, a Windows
+        desktop, or a $15 Raspberry Pi Zero 2W (a tiny credit-card-sized
+        computer that plugs into a wall outlet). Chore Coin uses less RAM
+        than a browser tab and works on hardware from the last decade.
       </p>
     </div>
 
@@ -902,10 +937,9 @@
 </footer>
 
 <script>
-  function copyInstall() {
-    const cmd = document.getElementById('install-cmd').textContent
+  function copyFromEl(elId, btn) {
+    const cmd = document.getElementById(elId).textContent
     navigator.clipboard.writeText(cmd).then(() => {
-      const btn = event.target
       const orig = btn.textContent
       btn.textContent = 'Copied!'
       btn.classList.add('copied')
@@ -915,6 +949,8 @@
       }, 1500)
     })
   }
+  function copyInstall()    { copyFromEl('install-cmd',     event.target) }
+  function copyInstallWin() { copyFromEl('install-cmd-win', event.target) }
 </script>
 
 </body>

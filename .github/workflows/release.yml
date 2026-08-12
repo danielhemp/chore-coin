@@ -75,14 +75,33 @@ jobs:
 
             Single-binary distribution — no Docker, no Node, no external
             files needed at runtime. Just download the binary for your OS
-            and architecture, `chmod +x`, and run it.
+            and architecture and run it.
 
-            ### Quick install (Linux + macOS)
+            ### Easiest: download a launcher
+
+            No commands to paste. Download, double-click, done.
+
+            - **Mac:** [install-chorecoin-mac.command](https://chore-coin.app/download/install-chorecoin-mac.command)
+            - **Windows:** [install-chorecoin-windows.bat](https://chore-coin.app/download/install-chorecoin-windows.bat)
+            - **Raspberry Pi / Linux:** [install-chorecoin-pi.sh](https://chore-coin.app/download/install-chorecoin-pi.sh)
+
+            See the [install guide](https://chore-coin.app/install-guide.html) for the click-past-the-security-warning walkthrough.
+
+            ### Terminal one-liner (Mac + Linux)
+
             ```bash
-            curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | sh
+            curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
+              CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh
             ```
 
-            ### Manual install
+            ### PowerShell one-liner (Windows)
+
+            ```powershell
+            $env:CHORECOIN_LICENSE = 'CHRC-XXXX-XXXX-XXXX-XXXX'
+            iwr -UseBasicParsing https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.ps1 | iex
+            ```
+
+            ### Manual binary download
             Pick the binary for your platform:
 
             | Platform | Binary |
@@ -92,11 +111,13 @@ jobs:
             | Linux x86_64 | `chorecoin-linux-amd64` |
             | Linux ARM64 (Pi 4/5/Zero 2W) | `chorecoin-linux-arm64` |
             | Linux ARM v7 (Pi 2/3/Zero W) | `chorecoin-linux-armv7` |
+            | Windows x64 | `chorecoin-windows-amd64.exe` |
+            | Windows ARM64 (Surface Pro X etc.) | `chorecoin-windows-arm64.exe` |
 
             All binaries are statically linked (no libc dependency) and
             include SHA-256 checksums in `SHA256SUMS.txt`.
 
-            ### Run
+            ### Run manually
             ```
             ./chorecoin serve --http=0.0.0.0:8090 --dir=/path/to/data
             ```
