@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	chorecoin "github.com/danielhemp/chore-coin"
@@ -50,6 +51,52 @@ func main() {
 		// Registered on /* — PocketBase's own /api/* and /_/* take priority
 		// because Echo matches more-specific patterns first.
 		e.Router.GET("/*", apis.StaticDirectoryHandler(chorecoin.FrontendFS(), true))
+
+		// GET /api/custom/setup-pending-license → 200 { licenseKey: string }
+		//
+		// The one-line installer (install.sh) stages the customer's license
+		// key into {DataDir}/.license-pending before starting the service so
+		// the setup wizard can pre-fill it — the customer doesn't have to
+		// re-paste the key in the browser.
+		//
+		// UNAUTH ON PURPOSE: the wizard runs before any user account exists,
+		// so nobody can be signed in to read it. The window is tightly
+		// bounded — the endpoint returns an empty string once any parent
+		// user exists (i.e. setup is complete), so a stale file left behind
+		// by a crashed install can't leak the key after the fact.
+		e.Router.GET("/api/custom/setup-pending-license", func(c echo.Context) error {
+			// Setup already done? Never return the key.
+			parents, err := app.Dao().FindRecordsByFilter(
+				"users", `role = "parent"`, "", 1, 0,
+			)
+			if err == nil && len(parents) > 0 {
+				return c.JSON(200, map[string]string{"licenseKey": ""})
+			}
+
+			p := filepath.Join(app.DataDir(), ".license-pending")
+			b, err := os.ReadFile(p)
+			if err != nil {
+				if os.IsNotExist(err) {
+					return c.JSON(200, map[string]string{"licenseKey": ""})
+				}
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to read pending license.", err)
+			}
+			key := strings.ToUpper(strings.TrimSpace(string(b)))
+			return c.JSON(200, map[string]string{"licenseKey": key})
+		})
+
+		// POST /api/custom/setup-clear-pending-license → 200 { ok: true }
+		//
+		// Called by the wizard after /api/custom/setup succeeds. Removes
+		// {DataDir}/.license-pending so the plaintext key no longer sits on
+		// disk. Safe to call multiple times; missing file is not an error.
+		e.Router.POST("/api/custom/setup-clear-pending-license", func(c echo.Context) error {
+			p := filepath.Join(app.DataDir(), ".license-pending")
+			if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to clear pending license.", err)
+			}
+			return c.JSON(200, map[string]bool{"ok": true})
+		})
 
 		// Parent-only backup download.
 		//

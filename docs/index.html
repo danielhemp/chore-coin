@@ -62,21 +62,22 @@
     parent-approved rewards. All the data stays on your Raspberry Pi.
   </p>
 
-  <!-- Install command -->
+  <!-- Install command — shown for trust; requires a license to actually complete -->
   <div class="mt-10 max-w-3xl mx-auto text-left">
     <div class="text-xs uppercase tracking-widest text-slate-500 mb-2 text-center">One-line install — macOS, Linux, Raspberry Pi</div>
     <div class="flex items-stretch gap-2">
-      <pre id="install-cmd" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-4 text-sm overflow-x-auto text-emerald-300 select-all">curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | sh</pre>
+      <pre id="install-cmd" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-4 text-sm overflow-x-auto text-emerald-300 select-all">curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
+  CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh</pre>
       <button onclick="copyInstall()" class="copy-btn bg-slate-800 border border-slate-700 rounded-xl px-4 text-sm">Copy</button>
     </div>
     <p class="mt-3 text-xs text-slate-500 text-center">
-      Reads your OS + CPU arch, verifies SHA-256, installs as a systemd or launchd service. About 20 seconds.
+      Requires a license key. Reads your OS + CPU arch, verifies SHA-256, installs as a systemd or launchd service. About 20 seconds.
     </p>
   </div>
 
   <div class="mt-8 flex items-center justify-center gap-3 flex-wrap">
-    <a href="#install" class="bg-brand-600 hover:bg-brand-500 rounded-xl px-5 py-3 font-medium">Get started</a>
-    <a href="https://github.com/danielhemp/chore-coin" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl px-5 py-3 font-medium">View on GitHub</a>
+    <a href="#pricing" class="bg-brand-600 hover:bg-brand-500 rounded-xl px-5 py-3 font-medium">Get a license — $20</a>
+    <a href="#features" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl px-5 py-3 font-medium">See what you get</a>
   </div>
 </section>
 
@@ -192,7 +193,7 @@
   <p class="mt-10 text-center text-sm text-slate-500 max-w-2xl mx-auto">
     The only optional service that ever touches our servers is the $12/yr
     subdomain add-on — and even then it's DNS-only. We create a
-    <code class="text-slate-300">yourname.chorecoin.family</code> record that points at
+    <code class="text-slate-300">yourname.chore-coin.family</code> record that points at
     your instance. Your family's traffic goes directly from browser to
     your server. We never proxy it.
   </p>
@@ -233,50 +234,25 @@
 <!-- ======================== INSTALL ======================== -->
 <section id="install" class="max-w-5xl mx-auto px-6 py-20 border-t border-slate-900">
   <h2 class="text-3xl sm:text-4xl font-bold text-center">Install in one command</h2>
-  <p class="mt-4 text-center text-slate-400">Works on any Mac (Intel or Apple Silicon), any Linux server, and every Raspberry Pi from Zero 2W through Pi 5.</p>
+  <p class="mt-4 text-center text-slate-400">Works on any Mac (Intel or Apple Silicon), any Linux server, and every Raspberry Pi from Zero 2W through Pi 5. Requires a Chore Coin license.</p>
 
-  <div class="mt-10 grid gap-6 md:grid-cols-2">
-
-    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-      <h3 class="font-semibold text-lg">The easy way</h3>
-      <p class="mt-2 text-sm text-slate-400">
-        Autodetects OS + CPU, verifies SHA-256, installs as a service that
-        starts on boot.
-      </p>
-      <pre class="mt-4 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-emerald-300 overflow-x-auto">curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | sh</pre>
-      <p class="mt-3 text-xs text-slate-500">
-        Uses sudo to install into /usr/local/bin and register the service.
-      </p>
-    </div>
-
-    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-      <h3 class="font-semibold text-lg">The manual way</h3>
-      <p class="mt-2 text-sm text-slate-400">
-        Grab a binary from
-        <a href="https://github.com/danielhemp/chore-coin/releases/latest" class="text-brand-400 underline">the latest release</a>
-        and run it.
-      </p>
-      <pre class="mt-4 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-200 overflow-x-auto">chmod +x chorecoin-*
-./chorecoin-* serve \
-    --http=0.0.0.0:8090 \
-    --dir=/path/to/data</pre>
-      <p class="mt-3 text-xs text-slate-500">
-        Then open <code class="text-slate-300">http://localhost:8090</code> to start the setup wizard.
-      </p>
-    </div>
-
-  </div>
-
-  <div class="mt-10 bg-slate-900/40 border border-slate-800 rounded-2xl p-6">
-    <h3 class="font-semibold">Docker Compose available too</h3>
+  <div class="mt-10 bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+    <h3 class="font-semibold text-lg">The one-line installer</h3>
     <p class="mt-2 text-sm text-slate-400">
-      Prefer containers? The repo ships a three-container
-      <code class="text-slate-300">docker-compose.yml</code> that's been battle-tested on the
-      family instance for months. Same features, same data model,
-      different distribution.
+      Autodetects OS + CPU, verifies SHA-256, installs as a service that
+      starts on boot. Pass your license key inline, or the installer will
+      prompt for it if run in an interactive terminal.
     </p>
-    <p class="mt-3">
-      <a href="https://github.com/danielhemp/chore-coin#option-1--docker-compose-current-stable-path" class="text-brand-400 text-sm underline">Docker install guide →</a>
+    <pre class="mt-4 bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-emerald-300 overflow-x-auto">curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
+  CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh</pre>
+    <p class="mt-3 text-xs text-slate-500">
+      Uses sudo to install into /usr/local/bin and register the service.
+      Setup wizard opens in your browser to finish creating your admin +
+      first parent account.
+    </p>
+    <p class="mt-4 text-sm">
+      Don't have a license yet?
+      <a href="#pricing" class="text-brand-400 underline">Get one — $20 one-time</a>.
     </p>
   </div>
 </section>
@@ -301,14 +277,17 @@
         <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> BUSL 1.1 source-visible. Read it, audit it, modify it for personal use.</li>
       </ul>
       <button disabled class="mt-8 block w-full text-center bg-slate-800/50 border border-slate-700 rounded-xl px-5 py-3 font-medium text-slate-500 cursor-not-allowed">Not yet on sale</button>
-      <p class="mt-3 text-xs text-slate-500 text-center">Free during v0 — <a href="#install" class="underline">install today for $0</a>.</p>
+      <p class="mt-3 text-xs text-slate-500 text-center">
+        Launch coming soon —
+        <a href="mailto:daniel@turnersystems.com?subject=Notify%20me%20when%20Chore%20Coin%20launches" class="underline">email me to be notified</a>.
+      </p>
     </div>
 
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 relative">
       <div class="absolute -top-3 right-4 bg-slate-700 text-xs font-medium px-2 py-1 rounded-full">Optional add-on</div>
       <div class="text-sm text-slate-400 uppercase tracking-wider">Family subdomain</div>
       <div class="mt-2 text-4xl font-bold">+$12<span class="text-lg font-normal text-slate-400">/year</span></div>
-      <div class="text-sm text-slate-400">— e.g. <code class="text-slate-300">smiths.chorecoin.family</code></div>
+      <div class="text-sm text-slate-400">— e.g. <code class="text-slate-300">smiths.chore-coin.family</code></div>
       <ul class="mt-6 space-y-3 text-sm text-slate-300">
         <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> A memorable URL your family can bookmark forever.</li>
         <li class="flex items-start gap-2"><span class="text-emerald-400 shrink-0">✓</span> Point it at your home instance (Cloudflare Tunnel) or your VPS.</li>
@@ -340,9 +319,9 @@
       <h3 class="font-semibold text-lg">Do I need to know Docker?</h3>
       <p class="mt-2 text-sm text-slate-400">
         No. The one-line install script drops a single binary onto your
-        Mac, Linux server, or Raspberry Pi. It registers itself as a
-        service that starts at boot. Docker Compose is also supported for
-        people who prefer it, but it's optional.
+        Mac, Linux server, or Raspberry Pi and registers it as a service
+        that starts at boot. No containers, no virtualization, no
+        terminal fluency required past the install command itself.
       </p>
     </div>
 
@@ -361,7 +340,7 @@
         Two options. Free: point a
         <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/" class="text-brand-400 underline">Cloudflare Tunnel</a>
         at your instance and open port 8090 to the world without touching
-        your router. Paid: pay $12/year for a <code class="text-slate-300">yourname.chorecoin.family</code> subdomain
+        your router. Paid: pay $12/year for a <code class="text-slate-300">yourname.chore-coin.family</code> subdomain
         that DNS-forwards to your instance — no tunnel management required.
       </p>
     </div>

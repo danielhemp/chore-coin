@@ -1,11 +1,12 @@
 // First-run setup wizard.
 //
 // Rendered by App.tsx when GET /api/custom/setup-status returns
-// { needsSetup: true }. Creates the PocketBase superuser (for /_/ admin UI)
-// AND the first parent user (for the app) in one atomic call to
-// POST /api/custom/setup. The backend endpoint locks itself after the first
-// successful run, so this component is never shown again on the same install.
-import { useState, type FormEvent } from 'react'
+// { needsSetup: true }. Collects the customer's license key + creates the
+// PocketBase superuser (for /_/ admin UI) + the first parent user (for the
+// app) in one atomic call to POST /api/custom/setup. The backend endpoint
+// locks itself after the first successful run, so this component is never
+// shown again on the same install.
+import { useEffect, useState, type FormEvent } from 'react'
 import { pb, callCustom } from '../pb'
 import { LOCAL_TZ } from '../pb'
 
@@ -15,7 +16,8 @@ const EMOJI_CHOICES = [
 ]
 
 export default function Setup({ onDone }: { onDone: () => void }) {
-  const [step, setStep] = useState<'welcome' | 'admin' | 'parent' | 'submitting' | 'done'>('welcome')
+  const [step, setStep] = useState<'license' | 'admin' | 'parent' | 'submitting' | 'done'>('license')
+  const [licenseKey, setLicenseKey] = useState('')
   const [adminEmail, setAdminEmail] = useState('')
   const [adminPassword, setAdminPassword] = useState('')
   const [parentName, setParentName] = useState('')
@@ -25,9 +27,26 @@ export default function Setup({ onDone }: { onDone: () => void }) {
   const [avatarEmoji, setAvatarEmoji] = useState('👤')
   const [err, setErr] = useState<string | null>(null)
 
+  // If install.sh dropped a license key into the data dir, the backend
+  // returns it here so the parent doesn't have to re-paste it.
+  useEffect(() => {
+    callCustom<{ licenseKey?: string }>('setup-pending-license')
+      .then((r) => {
+        if (r?.licenseKey) setLicenseKey(r.licenseKey)
+      })
+      .catch(() => {
+        /* endpoint may not exist on older backends; harmless */
+      })
+  }, [])
+
   const goAdmin = (e: FormEvent) => {
     e.preventDefault()
     setErr(null)
+    const key = licenseKey.trim().toUpperCase()
+    if (!/^CHRC(-[A-Z0-9]{4}){4}$/.test(key)) {
+      return setErr('License key must match the format CHRC-XXXX-XXXX-XXXX-XXXX.')
+    }
+    setLicenseKey(key)
     setStep('admin')
   }
 
@@ -50,6 +69,7 @@ export default function Setup({ onDone }: { onDone: () => void }) {
     setStep('submitting')
     try {
       await callCustom('setup', {
+        licenseKey,
         adminEmail,
         adminPassword,
         parentEmail,
@@ -60,6 +80,10 @@ export default function Setup({ onDone }: { onDone: () => void }) {
       })
       // Auto-login as the new parent so the user lands on the app, not the login screen.
       await pb.collection('users').authWithPassword(parentEmail, parentPassword)
+      // Best-effort: clear install.sh's staged license file now that we've
+      // persisted it into the settings collection. Endpoint only exists on
+      // the native binary; ignore errors from Docker / older backends.
+      callCustom('setup-clear-pending-license', {}).catch(() => {})
       setStep('done')
       // Give the animation a moment before handing off to the parent router.
       window.setTimeout(onDone, 800)
@@ -80,33 +104,50 @@ export default function Setup({ onDone }: { onDone: () => void }) {
           </p>
         </div>
 
-        {step === 'welcome' && (
+        {step === 'license' && (
           <form onSubmit={goAdmin} className="card space-y-4">
-            <p className="text-sm text-slate-300">
-              You'll create two accounts:
-            </p>
-            <ol className="text-sm text-slate-400 space-y-2 list-decimal list-inside">
-              <li>
-                <span className="text-slate-200 font-medium">Admin</span> —
-                for the underlying database (rarely used, but you'll need it
-                if anything ever needs a manual fix).
-              </li>
-              <li>
-                <span className="text-slate-200 font-medium">Your parent
-                account</span> — what you'll use every day to approve chores,
-                manage kids, and see the dashboard.
-              </li>
-            </ol>
+            <div>
+              <h2 className="text-lg font-semibold">License key</h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Paste the key from your Chore Coin purchase email. This
+                install won't work without one.
+              </p>
+            </div>
+            <input
+              className="input font-mono"
+              type="text"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              placeholder="CHRC-XXXX-XXXX-XXXX-XXXX"
+              value={licenseKey}
+              onChange={(e) => setLicenseKey(e.target.value.toUpperCase())}
+              maxLength={24}
+              required
+            />
+            {err && <div className="text-sm text-red-400">{err}</div>}
             <button className="btn-primary w-full" type="submit">
-              Get started →
+              Next →
             </button>
+            <p className="text-xs text-slate-500 text-center">
+              Don't have a key yet?{' '}
+              <a
+                href="https://chore-coin.app#pricing"
+                className="text-brand-400 underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Get one at chore-coin.app
+              </a>
+              .
+            </p>
           </form>
         )}
 
         {step === 'admin' && (
           <form onSubmit={goParent} className="card space-y-4">
             <div>
-              <h2 className="text-lg font-semibold">Step 1 of 2 — Admin account</h2>
+              <h2 className="text-lg font-semibold">Step 2 of 3 — Admin account</h2>
               <p className="text-xs text-slate-400 mt-1">
                 This is only for the low-level database admin UI. Use any
                 email — it doesn't need to be real. Save the password
@@ -137,7 +178,7 @@ export default function Setup({ onDone }: { onDone: () => void }) {
               <button
                 className="btn-secondary flex-1"
                 type="button"
-                onClick={() => setStep('welcome')}
+                onClick={() => setStep('license')}
               >
                 Back
               </button>
@@ -151,7 +192,7 @@ export default function Setup({ onDone }: { onDone: () => void }) {
         {step === 'parent' && (
           <form onSubmit={submit} className="card space-y-4">
             <div>
-              <h2 className="text-lg font-semibold">Step 2 of 2 — Your parent account</h2>
+              <h2 className="text-lg font-semibold">Step 3 of 3 — Your parent account</h2>
               <p className="text-xs text-slate-400 mt-1">
                 This is what you'll use every day. Add other parents later
                 from the app.

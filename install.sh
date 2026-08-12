@@ -50,6 +50,36 @@ die()  { printf "%s✗ %s%s\n" "$RED" "$1" "$R" >&2; exit 1; }
 say "Chore Coin installer"
 command -v curl >/dev/null 2>&1 || die "curl is required but not installed"
 
+# ---- license gate ---------------------------------------------------------
+# Chore Coin is a paid product. This installer requires a license key up
+# front so nobody accidentally sets up a server they can't actually run.
+# The key is passed to the setup wizard so the parent doesn't have to
+# re-paste it in the browser.
+LICENSE="${CHORECOIN_LICENSE:-}"
+if [ -z "$LICENSE" ]; then
+	# Try to read from an interactive terminal. When install.sh is piped
+	# through curl | sh there IS no controlling TTY — in that case the
+	# script fails cleanly with a link to the purchase page.
+	if [ -t 0 ]; then
+		printf "License key (from your purchase email): "
+		read -r LICENSE
+	fi
+fi
+LICENSE=$(printf "%s" "$LICENSE" | tr '[:lower:]' '[:upper:]' | tr -d ' \t\r\n')
+if [ -z "$LICENSE" ]; then
+	die "no license key provided.
+  Get one from https://chore-coin.app then run:
+      curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh | \\
+        CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh
+  (or run the installer from an interactive terminal to be prompted)"
+fi
+# Format check — real signature verification lands with Lemon Squeezy.
+if ! printf "%s" "$LICENSE" | grep -Eq '^CHRC(-[A-Z0-9]{4}){4}$'; then
+	die "license key doesn't match the expected CHRC-XXXX-XXXX-XXXX-XXXX format.
+  Double-check the key from your purchase email and try again."
+fi
+ok "license key accepted"
+
 os_raw="$(uname -s)"
 arch_raw="$(uname -m)"
 case "$os_raw" in
@@ -133,6 +163,12 @@ else
 	$SUDO chown "$USER:$(id -gn)" "$DATA_DIR"
 fi
 ok "data directory ${DATA_DIR}"
+
+# Drop the license key into the data dir so the setup wizard picks it up
+# on first run (parent doesn't have to re-paste it). Read-only by owner.
+printf "%s\n" "$LICENSE" > "${DATA_DIR}/.license-pending"
+chmod 600 "${DATA_DIR}/.license-pending"
+ok "license key staged for setup wizard"
 
 # ---- register as background service ----------------------------------------
 if [ "$OS" = "linux" ]; then

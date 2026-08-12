@@ -6,12 +6,12 @@ extra screen time, cash, or parent-approved rewards like "movie night." Every
 device in the family stays in sync in real time. Runs on a Mac mini, a Linux
 VPS, or a $15 Raspberry Pi Zero 2W.
 
-**Status: v0 — active development.** The current family-tested build ships as
-Docker Compose. A single-binary distribution for macOS, Linux (including
-Raspberry Pi), and eventually Windows is under active development in
-`cmd/chorecoin/`. The intent is a paid v1 with signed license keys, at-cost
-domain redirects, and marketing at [chorecoin.app](https://chorecoin.app)
-(coming soon).
+**Status: v0 — paid commercial product.** Chore Coin ships as a single
+self-contained binary distributed through GitHub Releases. Installation
+requires a valid license key (`CHRC-XXXX-XXXX-XXXX-XXXX`) from the
+[chore-coin.app](https://chore-coin.app) purchase page. There is no free
+install path; the installer refuses to run and the setup wizard refuses
+to complete without one.
 
 ## What it does
 
@@ -28,38 +28,93 @@ domain redirects, and marketing at [chorecoin.app](https://chorecoin.app)
   updates within a second, and the family wall dashboard reflects the new
   balance instantly. Web Push notifies parents of pending approvals and kids
   of approvals/denials.
-- **Fully self-hosted.** All data in a single SQLite file. Behind a Cloudflare
-  Tunnel if you want the family to reach it from anywhere without opening a
-  port on your router.
+- **Fully self-hosted.** All data in a single SQLite file on hardware you
+  own. Behind a Cloudflare Tunnel if you want the family to reach it from
+  anywhere without opening a port on your router. Optional
+  `yourname.chore-coin.family` subdomain add-on for a memorable URL.
 
 ## Installation
 
-### Option 1 — Docker Compose (current stable path)
-
-Requires Docker Desktop or Docker Engine. This is what the reference family
-instance runs.
-
-```bash
-git clone https://github.com/danielhemp/chore-coin.git
-cd chore-coin
-cp .env.example .env         # edit if you want a different timezone
-docker compose up -d
-```
-
-Open `http://localhost:8080` and follow the setup instructions. Create the
-initial superuser with:
+You need a Chore Coin license key from [chore-coin.app](https://chore-coin.app)
+before you can install. Once you have it, the one-line installer handles
+everything else:
 
 ```bash
-docker compose exec pocketbase /pb/pocketbase admin create you@example.com 'ChangeMe'
+curl -fsSL https://raw.githubusercontent.com/danielhemp/chore-coin/main/install.sh | \
+  CHORECOIN_LICENSE=CHRC-XXXX-XXXX-XXXX-XXXX sh
 ```
 
-Then sign into the admin UI at `/_/`, create your first parent record in the
-`users` collection (`role=parent`), and log into the app.
+The installer:
 
-### Option 2 — Native binary from source (developer path)
+1. Detects your OS (macOS / Linux) and CPU (arm64 / amd64 / armv7).
+2. Downloads the matching prebuilt binary from the latest GitHub release and
+   verifies its SHA-256 checksum against the published `SHA256SUMS.txt`.
+3. Installs `/usr/local/bin/chorecoin` (asks for sudo).
+4. Creates the data directory owned by you (`/var/lib/chorecoin` on Linux,
+   `~/Library/Application Support/chorecoin` on macOS).
+5. Stages the license key into the data directory so the setup wizard
+   pre-fills it — you don't retype it in the browser.
+6. Registers Chore Coin as a background service (systemd on Linux,
+   launchd user agent on macOS) so it starts at boot.
+7. Prints the URL to open in your browser to complete first-run setup.
 
-Requires Go 1.22+ and Node 20+. Produces a single self-contained
-`chorecoin` binary per platform.
+The setup wizard runs entirely in the browser: license key confirmation → PB
+admin account → your first parent user. Everything atomic, no terminal
+gymnastics required past step one.
+
+If you run the installer from an interactive terminal without setting
+`CHORECOIN_LICENSE`, it prompts for the key.
+
+### Uninstall
+
+```bash
+# Linux
+sudo systemctl disable --now chorecoin
+sudo rm /etc/systemd/system/chorecoin.service /usr/local/bin/chorecoin
+
+# macOS
+launchctl unload ~/Library/LaunchAgents/dev.chorecoin.plist
+rm ~/Library/LaunchAgents/dev.chorecoin.plist /usr/local/bin/chorecoin
+```
+
+Your data at `/var/lib/chorecoin` (or `~/Library/Application Support/chorecoin`)
+is left in place — remove it manually if you want a clean uninstall.
+
+### Moving to new hardware
+
+1. On the old machine: **Settings → Download family backup**. You get a
+   single zip file.
+2. On the old machine: **Settings → Release license**. Frees the key for
+   reuse.
+3. Install Chore Coin on the new machine using the installer above with the
+   same license key.
+4. On the new machine, during setup: choose "Restore from backup" and pick
+   the zip. Kids, chores, coin balances, and full history come across
+   intact.
+
+## Configuration
+
+The binary reads runtime configuration from environment variables. All are
+optional except when you want a specific feature.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `CHORECOIN_PORT` | `8090` | Port the HTTP server binds to |
+| `CHORECOIN_BIND` | `0.0.0.0` | Bind address (set to `127.0.0.1` for loopback-only) |
+| `CHORECOIN_LICENSE` | — | Only read by `install.sh`; ignored by the binary once installed |
+| `VITE_LOCAL_TIMEZONE` | `America/Chicago` | Baked into the frontend build; controls daily-boundary math for base chores |
+| `WEBPUSH_VAPID_PUBLIC_KEY` | — | Generated with the webpush sidecar; served to browsers so they can subscribe |
+| `WEBPUSH_VAPID_PRIVATE_KEY` | — | Same command; keep private |
+| `WEBPUSH_VAPID_SUBJECT` | `mailto:admin@chore-coin.local` | Contact for browser push registries |
+| `WEBPUSH_SHARED_SECRET` | — | Random 64-hex string; ties PocketBase to the webpush sidecar |
+| `NTFY_URL` / `NTFY_TOPIC` / `NTFY_TOKEN` | — | Optional [ntfy.sh](https://ntfy.sh) fallback for push notifications |
+| `CHORECOIN_HOOKS_DIR` | (embedded) | Override the on-disk `pb_hooks` for local development |
+| `CHORECOIN_MIGRATIONS_DIR` | (embedded) | Override the on-disk `pb_migrations` for local development |
+
+## For developers
+
+If you're a licensed customer who wants to build from source (allowed under
+the BUSL — see below) or contribute a patch:
 
 ```bash
 git clone https://github.com/danielhemp/chore-coin.git
@@ -71,7 +126,9 @@ cd chore-coin
 # Build the binary for your host
 make build
 
-# Run against a scratch data dir
+# Run against a scratch data dir with a test license
+mkdir -p /tmp/chorecoin-dev
+echo "CHRC-TEST-TEST-TEST-TEST" > /tmp/chorecoin-dev/.license-pending
 ./bin/chorecoin serve --http=127.0.0.1:8090 --dir=/tmp/chorecoin-dev
 ```
 
@@ -86,34 +143,10 @@ ls -lh bin/
 Binaries are statically linked (`CGO_ENABLED=0`, pure-Go SQLite driver) — no
 libc dependency, ~40MB each.
 
-### Option 3 — Prebuilt binary (coming with v1)
-
-A one-line installer for macOS + Linux (including Raspberry Pi) is planned:
-
-```bash
-curl -fsSL https://chorecoin.app/install.sh | sh
-```
-
-Detects your OS/arch, drops the right binary in `/usr/local/bin/chorecoin`,
-registers a systemd/launchd service, and opens the setup wizard in your
-browser. Not shipped yet — track progress at
-[chorecoin.app](https://chorecoin.app) or in
-[build-state](https://github.com/danielhemp/chore-coin/issues).
-
-## Configuration
-
-The Docker path reads a `.env` file at the repo root. The native binary
-reads environment variables directly.
-
-| Variable | Default | Notes |
-|---|---|---|
-| `VITE_LOCAL_TIMEZONE` | `America/Chicago` | Used to compute daily boundaries for base-chore reset |
-| `WEBPUSH_VAPID_PUBLIC_KEY` | — | Generated with `docker compose run --rm webpush npm run generate-vapid` |
-| `WEBPUSH_VAPID_PRIVATE_KEY` | — | Same command; keep private |
-| `WEBPUSH_VAPID_SUBJECT` | `mailto:admin@chorecoin.local` | Contact for browser push registries |
-| `WEBPUSH_SHARED_SECRET` | — | Random 64-hex string; ties PocketBase to the webpush sidecar |
-| `CHORECOIN_HOOKS_DIR` | `./pb_hooks` | Native binary only — override for testing |
-| `CHORECOIN_MIGRATIONS_DIR` | `./pb_migrations` | Native binary only — override for testing |
+Docker Compose is retained in the repo (`docker-compose.yml`) for continuity
+with the reference family instance that ran on it during development. It is
+not a supported install path for new customers and is not advertised on the
+marketing site.
 
 ## Project layout
 
@@ -124,18 +157,19 @@ chore-coin/
 ├── pb_hooks/           PocketBase JS hooks (approve, redeem, invite kid, ...)
 ├── pb_migrations/      PB schema migrations
 ├── webpush/            Node sidecar that signs + delivers Web Push
-├── docker-compose.yml  Three-container reference deployment
-├── Dockerfile.pocketbase
+├── subdomain-service/  Cloudflare Worker for *.chore-coin.family
+├── docs/               Marketing site served from GitHub Pages
+├── install.sh          One-line installer (curl-pipe)
 ├── Makefile            make build | make release | make run
-└── go.mod / go.sum
+└── docker-compose.yml  Retained for development / existing installs
 ```
 
 ## License
 
 [Business Source License 1.1](./LICENSE) — copyright © 2026 Daniel Hemphill.
 
-- **Free to use** for the internal operations of a single family, household,
-  or non-commercial group.
+- **Personal / family use** requires a paid license key. Purchase at
+  [chore-coin.app](https://chore-coin.app).
 - **Commercial use** — including offering Chore Coin as a hosted or managed
   service, or bundling it into a paid product — requires a separate
   commercial license from the author.

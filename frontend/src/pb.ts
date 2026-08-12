@@ -20,13 +20,22 @@ pb.autoCancellation(false)
 // Keep the JWT valid across page reloads (PB persists it to localStorage by default).
 export const LOCAL_TZ = import.meta.env.VITE_LOCAL_TIMEZONE || 'America/Chicago'
 
-/** Helper for calling our custom /api/custom/* endpoints. */
+/** Helper for calling our custom /api/custom/* endpoints.
+ *
+ * Overloads:
+ *   callCustom('name')              → GET  /api/custom/name
+ *   callCustom('name', body)        → POST /api/custom/name with JSON body
+ *   callCustom('name', body, 'POST') → explicit method
+ */
 export async function callCustom<T = unknown>(
   path: string,
   body?: Record<string, unknown>,
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE',
 ): Promise<T> {
-  return pb.send<T>(`/api/custom/${path}`, {
-    method: 'POST',
-    body: body ?? {},
-  })
+  const resolvedMethod = method || (body === undefined ? 'GET' : 'POST')
+  const init: Record<string, unknown> = { method: resolvedMethod }
+  if (resolvedMethod !== 'GET' && resolvedMethod !== 'DELETE') {
+    init.body = body ?? {}
+  }
+  return pb.send<T>(`/api/custom/${path}`, init)
 }

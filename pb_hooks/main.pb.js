@@ -87,19 +87,25 @@ routerAdd('GET', '/api/custom/setup-status', (c) => {
   return c.json(200, { needsSetup })
 })
 
-// POST /api/custom/setup  { adminEmail, adminPassword, parentEmail,
-//                          parentPassword, parentName, avatarEmoji?, timezone? }
+// POST /api/custom/setup  { licenseKey, adminEmail, adminPassword,
+//                          parentEmail, parentPassword, parentName,
+//                          avatarEmoji?, timezone? }
 //
-// One-shot bootstrap: creates the PocketBase superuser (for /_/ admin UI)
-// AND the first parent user (for the app), atomically. Refuses to run if
-// any parent user already exists — the endpoint locks itself the moment
-// setup is complete.
+// One-shot bootstrap: persists the customer's license key AND creates the
+// PocketBase superuser (for /_/ admin UI) AND the first parent user (for the
+// app), atomically. Refuses to run if any parent user already exists — the
+// endpoint locks itself the moment setup is complete.
 //
-// Unauth on purpose: the whole point is that new self-hosters can complete
-// this from the browser without ever touching a terminal.
+// The license key is REQUIRED: Chore Coin is a paid product, and there is
+// no free install path. install.sh has already validated the key format
+// once and staged it into {DataDir}/.license-pending for the wizard to
+// pre-fill; we re-validate the format here anyway (never trust the client)
+// and persist it to the settings collection so the parent Settings page
+// can display and manage it.
 routerAdd('POST', '/api/custom/setup', (c) => {
-  const { requireBody } = require(`${__hooks}/lib.js`)
+  const { requireBody, ensureSettingsRow } = require(`${__hooks}/lib.js`)
   const body = requireBody(c, {
+    licenseKey: '',
     adminEmail: '',
     adminPassword: '',
     parentEmail: '',
@@ -119,6 +125,16 @@ routerAdd('POST', '/api/custom/setup', (c) => {
   )
   if (existingParents.length > 0) {
     throw new BadRequestError('Setup has already been completed on this server.')
+  }
+
+  // License key is required, format-checked. Real Ed25519 signature
+  // verification lands with Lemon Squeezy integration.
+  const licenseKey = String(body.licenseKey || '').trim().toUpperCase()
+  if (!licenseKey) {
+    throw new BadRequestError('License key is required. Get one at https://chore-coin.app.')
+  }
+  if (!/^CHRC(-[A-Z0-9]{4}){4}$/.test(licenseKey)) {
+    throw new BadRequestError('License key must match the format CHRC-XXXX-XXXX-XXXX-XXXX.')
   }
 
   // Basic validation (frontend also validates, but never trust it).
@@ -168,6 +184,12 @@ routerAdd('POST', '/api/custom/setup', (c) => {
     })
     parent.setPassword(body.parentPassword)
     txDao.saveRecord(parent)
+
+    // 3) Persist the license entitlement to the settings row.
+    const settings = ensureSettingsRow(txDao)
+    settings.set('licenseKey', licenseKey)
+    settings.set('licenseActivatedAt', new Date().toISOString())
+    txDao.saveRecord(settings)
   })
 
   return c.json(200, { ok: true })
