@@ -21,6 +21,7 @@ import type {
   LedgerRecord,
   RewardItemRecord,
   RewardRequestRecord,
+  UserRecord,
 } from '../lib/types'
 import { todayLocal } from '../lib/dates'
 
@@ -365,4 +366,14 @@ export function useRecentRewardRequestsForKid(kidId: string | undefined, count =
     sortBy: (a, b) => b.created.localeCompare(a.created),
   })
   return { data: res.data.slice(0, count), loading: res.loading }
+}
+
+// ---- dashboards (kiosk accounts for family wall tablets) ---------------
+
+export function useDashboards() {
+  return useLive<UserRecord>('users', {
+    filter: 'role = "dashboard"',
+    sortBy: byName,
+    matches: (r) => r.role === 'dashboard',
+  })
 }

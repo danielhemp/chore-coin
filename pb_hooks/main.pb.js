@@ -536,14 +536,24 @@ routerAdd('POST', '/api/custom/request-reward', (c) => {
 })
 
 // POST /api/custom/approve-reward  { requestId }
+//
+// Approves a pending reward_request. Branches on `kind`:
+//   - 'item'        → deduct coins, ledger the spend, notify kid.
+//   - 'screen_time' → deduct coins AND credit today's daily_status with the
+//                     minutes so they appear in the kid's available-time
+//                     counter, ledger both sides, notify kid.
+// A missing/empty kind is treated as 'item' (legacy pre-migration rows).
 routerAdd('POST', '/api/custom/approve-reward', (c) => {
   const {
     requireParent,
     requireBody,
     findOrNull,
     ensureBalance,
+    ensureDailyStatus,
     writeLedger,
     sendWebPushToKid,
+    localDate,
+    COIN_TO_SCREEN_MINUTES,
   } = require(`${__hooks}/lib.js`)
 
   const user = requireParent(c)
@@ -557,7 +567,70 @@ routerAdd('POST', '/api/custom/approve-reward', (c) => {
       throw new BadRequestError('Request is not pending.')
     }
     const kidId = req.getString('kidId')
+    const kind = req.getString('kind') || 'item'
 
+    if (kind === 'screen_time') {
+      // --- Screen-time redemption ---
+      const cost = req.getInt('coinCost')
+      if (cost <= 0) throw new BadRequestError('Request coin amount is invalid.')
+
+      const bal = ensureBalance(txDao, kidId)
+      const cur = bal.getInt('coinBalance')
+      if (cur < cost) {
+        throw new BadRequestError(
+          `Not enough coins — needs ${cost}, has ${cur}. Deny or wait for more coins.`,
+        )
+      }
+      // Re-derive minutes from cost server-side to prevent tampered snapshots.
+      const minutes = cost * COIN_TO_SCREEN_MINUTES
+
+      bal.set('coinBalance', cur - cost)
+      txDao.saveRecord(bal)
+
+      // Credit today's granted minutes so the kid's available-time counter
+      // updates instantly. Mixes with base-chore-earned minutes into one pool.
+      const today = localDate()
+      const status = ensureDailyStatus(txDao, kidId, today)
+      status.set(
+        'baseScreenTimeGrantedMinutes',
+        status.getInt('baseScreenTimeGrantedMinutes') + minutes,
+      )
+      txDao.saveRecord(status)
+
+      // Two ledger entries: one for the coin debit, one for the minute credit.
+      // Keeps the history readable ("−3 🪙", "+15 min") and correlates via refId.
+      writeLedger(txDao, {
+        kidId,
+        type: 'spend_coin_screen',
+        amount: -cost,
+        note: `Redeemed ${cost} coins for ${minutes} min screen time`,
+        refId: req.id,
+        by: user.id,
+      })
+      writeLedger(txDao, {
+        kidId,
+        type: 'adjust_base_screen',
+        amount: minutes,
+        note: `+${minutes} min from coin redemption`,
+        refId: req.id,
+        by: user.id,
+      })
+
+      req.set('status', 'approved')
+      req.set('screenTimeMinutes', minutes)
+      req.set('approvedBy', user.id)
+      req.set('approvedAt', new Date().toISOString())
+      txDao.saveRecord(req)
+
+      notify = {
+        kidId,
+        title: '📺 Screen time approved!',
+        message: `${minutes} minutes added — go enjoy it!`,
+      }
+      return
+    }
+
+    // --- Item reward (default / pre-migration) ---
     // Re-derive cost from the reward if it still exists (prevents drift if a
     // parent edited the cost after the kid requested it). Fall back to the
     // snapshotted cost if the reward has since been deleted.
@@ -602,6 +675,142 @@ routerAdd('POST', '/api/custom/approve-reward', (c) => {
   if (notify) {
     sendWebPushToKid(notify.kidId, notify.title, notify.message, { tag: 'chore-coin-kid' })
   }
+  return c.json(200, { ok: true })
+})
+
+// -----------------------------------------------------------------------------
+// Screen-time request flow — kid asks for X minutes worth of coins, parent
+// approves in the same inbox as chores and reward-item requests. Approval
+// deducts the coins AND credits today's available screen minutes atomically
+// (see /api/custom/approve-reward handler above).
+// -----------------------------------------------------------------------------
+
+// POST /api/custom/request-screen-time  { kidId, coins }
+routerAdd('POST', '/api/custom/request-screen-time', (c) => {
+  const {
+    requireAuthedForKid,
+    requireBody,
+    findOrNull,
+    sendWebPushToAllParents,
+    COIN_TO_SCREEN_MINUTES,
+  } = require(`${__hooks}/lib.js`)
+
+  const body = requireBody(c, { kidId: '', coins: 0 })
+  if (!body.kidId) throw new BadRequestError('kidId required.')
+  if (body.coins <= 0) throw new BadRequestError('coins must be positive.')
+  requireAuthedForKid(c, body.kidId)
+
+  const minutes = body.coins * COIN_TO_SCREEN_MINUTES
+
+  let created = null
+  let kidName = 'A kid'
+  $app.dao().runInTransaction((txDao) => {
+    const kid = findOrNull(() => txDao.findRecordById('kids', body.kidId))
+    if (kid) kidName = kid.getString('displayName') || kidName
+
+    const col = txDao.findCollectionByNameOrId('reward_requests')
+    const rec = new Record(col, {
+      kidId: body.kidId,
+      kind: 'screen_time',
+      // rewardId intentionally omitted — screen-time requests have no reward_items row.
+      rewardTitle: `${minutes} min screen time`,
+      rewardEmoji: '📺',
+      coinCost: body.coins,
+      screenTimeMinutes: minutes,
+      status: 'pending',
+    })
+    txDao.saveRecord(rec)
+    created = { id: rec.id, coins: body.coins, minutes }
+  })
+
+  if (created) {
+    sendWebPushToAllParents(
+      `📺 ${kidName} wants screen time`,
+      `${created.minutes} min for ${created.coins} 🪙 if approved`,
+      { tag: 'chore-coin-screen-pending', clickUrl: '/approvals' },
+    )
+  }
+  return c.json(200, { ok: true, id: created ? created.id : '' })
+})
+
+// -----------------------------------------------------------------------------
+// Dashboard user management — kiosk logins for family wall tablets. A
+// "dashboard" role has read-all + create-pending-completions + spend-own-base-
+// time permissions but cannot approve, adjust, or manage. Perfect for a
+// Chromebook or old iPad mounted in the kitchen that everyone in the family
+// can walk up to and tap.
+// -----------------------------------------------------------------------------
+
+// POST /api/custom/create-dashboard  { displayName, username, pin }
+routerAdd('POST', '/api/custom/create-dashboard', (c) => {
+  const { requireParent, requireBody } = require(`${__hooks}/lib.js`)
+  requireParent(c)
+  const body = requireBody(c, { displayName: '', username: '', pin: '' })
+
+  const displayName = String(body.displayName || '').trim()
+  const rawUser = String(body.username || '').trim()
+  const pin = String(body.pin || '')
+
+  if (!displayName) throw new BadRequestError('displayName is required.')
+  if (rawUser.length < 2) throw new BadRequestError('username must be at least 2 characters.')
+  if (pin.length < 4) throw new BadRequestError('PIN must be at least 4 characters.')
+
+  const username = rawUser.toLowerCase().replace(/[^a-z0-9_]/g, '_')
+
+  let dashId = ''
+  $app.dao().runInTransaction((txDao) => {
+    const usersCol = txDao.findCollectionByNameOrId('users')
+    const rec = new Record(usersCol, {
+      username,
+      role: 'dashboard',
+      displayName,
+      avatarEmoji: '📺',
+      emailVisibility: false,
+      verified: true,
+    })
+    rec.setPassword(pin)
+    txDao.saveRecord(rec)
+    dashId = rec.id
+  })
+  return c.json(200, { ok: true, id: dashId, username })
+})
+
+// POST /api/custom/delete-dashboard  { userId }
+routerAdd('POST', '/api/custom/delete-dashboard', (c) => {
+  const { requireParent, requireBody } = require(`${__hooks}/lib.js`)
+  requireParent(c)
+  const body = requireBody(c, { userId: '' })
+  if (!body.userId) throw new BadRequestError('userId required.')
+
+  $app.dao().runInTransaction((txDao) => {
+    const rec = txDao.findRecordById('users', body.userId)
+    if (rec.getString('role') !== 'dashboard') {
+      throw new BadRequestError('Not a dashboard account — refusing to delete.')
+    }
+    txDao.deleteRecord(rec)
+  })
+  return c.json(200, { ok: true })
+})
+
+// POST /api/custom/reset-dashboard-pin  { userId, pin }
+// Lets a parent change a dashboard's PIN without knowing the old one.
+routerAdd('POST', '/api/custom/reset-dashboard-pin', (c) => {
+  const { requireParent, requireBody } = require(`${__hooks}/lib.js`)
+  requireParent(c)
+  const body = requireBody(c, { userId: '', pin: '' })
+  if (!body.userId) throw new BadRequestError('userId required.')
+  if (String(body.pin || '').length < 4) {
+    throw new BadRequestError('PIN must be at least 4 characters.')
+  }
+
+  $app.dao().runInTransaction((txDao) => {
+    const rec = txDao.findRecordById('users', body.userId)
+    if (rec.getString('role') !== 'dashboard') {
+      throw new BadRequestError('Not a dashboard account.')
+    }
+    rec.setPassword(body.pin)
+    txDao.saveRecord(rec)
+  })
   return c.json(200, { ok: true })
 })
 

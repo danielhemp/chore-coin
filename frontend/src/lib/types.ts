@@ -121,12 +121,24 @@ export type RewardItemRecord = WithMeta<RewardItemFields>
 
 export type RewardRequestStatus = 'pending' | 'approved' | 'denied' | 'cancelled'
 
+/**
+ * A reward request is either an item from the parent-defined catalog
+ * (kind='item') or a coin-for-screen-time redemption (kind='screen_time').
+ * Legacy pre-migration rows have empty kind and are treated as 'item' in code.
+ */
+export type RewardRequestKind = 'item' | 'screen_time' | ''
+
 export interface RewardRequestFields {
   kidId: string
-  rewardId: string
+  /** Empty on legacy rows; treat as 'item'. */
+  kind?: RewardRequestKind
+  /** Empty on screen_time requests (no reward_items row backing them). */
+  rewardId?: string
   rewardTitle: string
   rewardEmoji?: string
   coinCost: number
+  /** Only populated for kind='screen_time'; server derives from coinCost. */
+  screenTimeMinutes?: number
   status: RewardRequestStatus
   approvedBy?: string
   approvedAt?: string

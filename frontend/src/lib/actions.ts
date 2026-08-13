@@ -185,6 +185,15 @@ export function requestReward(kidId: string, rewardId: string) {
   return callCustom<{ ok: boolean; id: string }>('request-reward', { kidId, rewardId })
 }
 
+/**
+ * Kid asks for `coins` worth of screen time. Creates a pending reward_request
+ * (kind=screen_time) that shows up in the parent's approvals inbox. Approval
+ * atomically deducts the coins and credits today's available screen minutes.
+ */
+export function requestScreenTime(kidId: string, coins: number) {
+  return callCustom<{ ok: boolean; id: string }>('request-screen-time', { kidId, coins })
+}
+
 export function approveRewardRequest(requestId: string) {
   return callCustom('approve-reward', { requestId })
 }
@@ -195,4 +204,32 @@ export function denyRewardRequest(requestId: string, note?: string) {
 
 export function cancelRewardRequest(requestId: string) {
   return callCustom('cancel-reward', { requestId })
+}
+
+// ---- dashboards (parent) ------------------------------------------------
+
+/**
+ * Create a kiosk login for a family wall tablet. Returns the new user id +
+ * normalized username (lowercased, non-[a-z0-9_] replaced with underscores).
+ * The dashboard user has read-all + create-pending-completions +
+ * spend-own-base-time permissions but cannot approve or manage.
+ */
+export function createDashboard(params: {
+  displayName: string
+  username: string
+  pin: string
+}) {
+  return callCustom<{ ok: boolean; id: string; username: string }>('create-dashboard', {
+    displayName: params.displayName,
+    username: params.username,
+    pin: params.pin,
+  })
+}
+
+export function deleteDashboard(userId: string) {
+  return callCustom('delete-dashboard', { userId })
+}
+
+export function resetDashboardPin(userId: string, pin: string) {
+  return callCustom('reset-dashboard-pin', { userId, pin })
 }

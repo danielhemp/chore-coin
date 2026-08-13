@@ -140,7 +140,7 @@ export default function Approvals() {
           {pendingRewards.length > 0 && (
             <>
               <h2 className="text-sm uppercase tracking-wide text-slate-500 mb-2">
-                🎁 Reward requests ({pendingRewards.length})
+                🎁 Rewards &amp; screen time ({pendingRewards.length})
               </h2>
               <ul className="space-y-3">
                 {pendingRewards.map((r) => {

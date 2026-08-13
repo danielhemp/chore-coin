@@ -10,8 +10,8 @@ import {
 import {
   cancelRewardRequest,
   redeemCoinsForCash,
-  redeemCoinsForScreen,
   requestReward,
+  requestScreenTime,
 } from '../../lib/actions'
 import { COIN_TO_CENTS, COIN_TO_SCREEN_MINUTES } from '../../lib/types'
 
@@ -43,9 +43,12 @@ export default function KidRedeem() {
     setErr(null)
     try {
       if (kind === 'screen') {
-        await redeemCoinsForScreen(kidId, amount)
+        // Now goes through the parent approvals inbox — coins aren't deducted
+        // until a parent approves, and approval also credits today's available
+        // screen minutes so the kid sees the new time immediately after.
+        await requestScreenTime(kidId, amount)
         setMsg(
-          `Redeemed ${amount} coins for ${amount * COIN_TO_SCREEN_MINUTES} minutes of screen time. Ask a parent to unlock it for you!`,
+          `Asked for ${amount * COIN_TO_SCREEN_MINUTES} minutes of screen time (${amount} 🪙). Waiting for a parent to approve.`,
         )
       } else {
         await redeemCoinsForCash(kidId, amount)
@@ -54,7 +57,7 @@ export default function KidRedeem() {
         )
       }
     } catch (e: any) {
-      setErr(e?.message || 'Redemption failed')
+      setErr(e?.message || 'Request failed')
     } finally {
       setBusy(null)
     }
@@ -138,8 +141,10 @@ export default function KidRedeem() {
           onClick={() => doRedeem('screen')}
           disabled={!canRedeem || busy !== null}
         >
-          <div className="text-2xl font-bold">📺 {amount * COIN_TO_SCREEN_MINUTES} minutes</div>
-          <div className="text-sm text-brand-100 opacity-90">of extra screen time</div>
+          <div className="text-2xl font-bold">📺 Ask for {amount * COIN_TO_SCREEN_MINUTES} minutes</div>
+          <div className="text-sm text-brand-100 opacity-90">
+            of extra screen time — parent will approve
+          </div>
         </button>
         <button
           className="btn-success py-6 text-left flex-col items-start"
