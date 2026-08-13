@@ -28,6 +28,7 @@ import {
   cancelRewardRequest,
   markChoreDone,
   requestReward,
+  requestScreenTime,
   spendBaseScreenTime,
 } from '../../lib/actions'
 import { formatShortDate } from '../../lib/dates'
@@ -199,8 +200,21 @@ function KidTile({ kid }: { kid: KidRecord }) {
       void title
     })
 
+  const askScreenTime = (coins: number) =>
+    runWithBusy(`st-${coins}`, () => requestScreenTime(kid.id, coins))
+
   const cancelReward = (requestId: string) =>
     runWithBusy(`rc-${requestId}`, () => cancelRewardRequest(requestId))
+
+  // Standard screen-time asks — 4 quick-tap buttons matching the "spend base"
+  // grid (5/15/30/60 min) so families have a consistent set of increments.
+  // 1 coin = 5 minutes (COIN_TO_SCREEN_MINUTES).
+  const SCREEN_TIME_ASKS = [
+    { coins: 1, mins: 5 },
+    { coins: 3, mins: 15 },
+    { coins: 6, mins: 30 },
+    { coins: 12, mins: 60 },
+  ]
 
   return (
     <div
@@ -400,6 +414,32 @@ function KidTile({ kid }: { kid: KidRecord }) {
           <div className="text-xs uppercase tracking-wide text-slate-500 mb-2">
             Redeem 🪙 {balance}
           </div>
+
+          {/* Screen-time asks — quick-tap grid for the common increments.
+              Each tap creates a pending reward_request (kind=screen_time)
+              that a parent approves from their phone. On approval the coins
+              deduct AND the minutes credit to today's available time. */}
+          <div className="rounded-xl border border-brand-800/60 bg-brand-950/30 p-3 mb-2">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium">📺 Ask for screen time</div>
+              <div className="text-[10px] text-slate-400">1🪙 = 5m · parent approves</div>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {SCREEN_TIME_ASKS.map(({ coins, mins }) => (
+                <button
+                  key={coins}
+                  className="btn-primary py-2 leading-tight flex flex-col items-center disabled:opacity-40"
+                  disabled={busy !== null || balance < coins}
+                  onClick={() => askScreenTime(coins)}
+                  title={`Ask for ${mins} minutes (spends ${coins} coin${coins === 1 ? '' : 's'})`}
+                >
+                  <span className="text-base font-bold">{mins}m</span>
+                  <span className="text-[10px] opacity-90">−{coins}🪙</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {rewards.length > 0 && (
             <ul className="space-y-2 mb-2">
               {rewards.map((r) => {
