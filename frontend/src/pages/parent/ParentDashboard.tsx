@@ -178,6 +178,12 @@ export default function ParentDashboard() {
         <Link to="/bonus-chores" className="btn-secondary">
           🎯 Bonus chores
         </Link>
+        <Link to="/rewards" className="btn-secondary">
+          🎁 Rewards
+        </Link>
+        <Link to="/goals" className="btn-secondary">
+          💰 Savings goals
+        </Link>
         <Link to="/dashboard" className="btn-secondary col-span-2">
           📺 Family dashboard (wall display)
         </Link>

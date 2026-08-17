@@ -17,6 +17,8 @@ import type {
   BonusChoreRecord,
   CompletionRecord,
   DailyStatusRecord,
+  GoalContributionRecord,
+  GoalRecord,
   KidRecord,
   LedgerRecord,
   RewardItemRecord,
@@ -375,5 +377,60 @@ export function useDashboards() {
     filter: 'role = "dashboard"',
     sortBy: byName,
     matches: (r) => r.role === 'dashboard',
+  })
+}
+
+// ---- goals + contributions ---------------------------------------------
+
+/** All active + reached goals (parents/dashboard see everything; kids see per collection rules). */
+export function useActiveGoals() {
+  return useLive<GoalRecord>('goals', {
+    filter: 'status = "active" || status = "reached"',
+    sort: '-created',
+    matches: (r) => r.status === 'active' || r.status === 'reached',
+    sortBy: (a, b) => b.created.localeCompare(a.created),
+  })
+}
+
+/** All goals in every status — used on the parent Manage page. */
+export function useAllGoals() {
+  return useLive<GoalRecord>('goals', {
+    sort: '-created',
+    sortBy: (a, b) => b.created.localeCompare(a.created),
+  })
+}
+
+/** Goals reached but not yet completed — parent approval queue. */
+export function useGoalsAwaitingApproval() {
+  return useLive<GoalRecord>('goals', {
+    filter: 'status = "reached"',
+    sort: 'created',
+    matches: (r) => r.status === 'reached',
+    sortBy: (a, b) => a.created.localeCompare(b.created),
+  })
+}
+
+/**
+ * Approved contributions for a goal — used to compute the progress bar
+ * total (sum of coinAmount + matchAmount over the returned rows).
+ * Family-visibility goals return contribs across all kids; individual
+ * goals filter server-side to the owner.
+ */
+export function useApprovedContributionsForGoal(goalId: string | undefined) {
+  return useLive<GoalContributionRecord>('goal_contributions', {
+    enabled: !!goalId,
+    filter: goalId ? `goalId = "${goalId}" && status = "approved"` : '',
+    matches: (r) => r.goalId === goalId && r.status === 'approved',
+    sortBy: (a, b) => a.created.localeCompare(b.created),
+  })
+}
+
+/** Pending contributions across all goals — parent approval queue. */
+export function usePendingGoalContributions() {
+  return useLive<GoalContributionRecord>('goal_contributions', {
+    filter: 'status = "pending"',
+    sort: 'created',
+    matches: (r) => r.status === 'pending',
+    sortBy: (a, b) => a.created.localeCompare(b.created),
   })
 }

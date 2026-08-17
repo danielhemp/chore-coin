@@ -814,6 +814,497 @@ routerAdd('POST', '/api/custom/reset-dashboard-pin', (c) => {
   return c.json(200, { ok: true })
 })
 
+// -----------------------------------------------------------------------------
+// Savings goals — kids (or the whole family) put coins toward a target, parent
+// approves the cash-out when the target is reached. See migration
+// 1700000008_goals.js for the data model rationale and match-rate math.
+// -----------------------------------------------------------------------------
+
+// POST /api/custom/create-goal
+//   { title, description?, emoji?, category?, ownerKidId?, coinTarget,
+//     matchRate?, visibility, approvalRequired? }
+// ownerKidId null/omitted = family goal. matchRate default 0. visibility
+// required (frontend derives from category if the user doesn't pick).
+routerAdd('POST', '/api/custom/create-goal', (c) => {
+  const { requireParent, requireBody } = require(`${__hooks}/lib.js`)
+  const user = requireParent(c)
+  const body = requireBody(c, {
+    title: '',
+    description: '',
+    emoji: '',
+    category: '',
+    ownerKidId: '',
+    coinTarget: 0,
+    matchRate: 0,
+    visibility: '',
+    approvalRequired: false,
+  })
+
+  const title = String(body.title || '').trim()
+  if (!title) throw new BadRequestError('title is required.')
+  const coinTarget = Math.floor(Number(body.coinTarget) || 0)
+  if (coinTarget < 1) throw new BadRequestError('coinTarget must be at least 1.')
+  const visibility = String(body.visibility || 'owner_only')
+  if (!['owner_only', 'family', 'private'].includes(visibility)) {
+    throw new BadRequestError('visibility must be owner_only, family, or private.')
+  }
+  const matchRate = Math.max(0, Number(body.matchRate) || 0)
+
+  let goalId = ''
+  $app.dao().runInTransaction((txDao) => {
+    const col = txDao.findCollectionByNameOrId('goals')
+    const rec = new Record(col, {
+      title,
+      description: String(body.description || '').trim(),
+      emoji: String(body.emoji || '').trim(),
+      category: String(body.category || '').trim(),
+      ownerKidId: body.ownerKidId || null,
+      coinTarget,
+      matchRate,
+      visibility,
+      approvalRequired: !!body.approvalRequired,
+      status: 'active',
+      createdBy: user.id,
+    })
+    txDao.saveRecord(rec)
+    goalId = rec.id
+  })
+  return c.json(200, { ok: true, id: goalId })
+})
+
+// POST /api/custom/update-goal  { goalId, ...any editable fields }
+// Only the fields present in the body are updated. Cannot change ownerKidId
+// once contributions exist (would break refund logic). Cannot change status
+// through this endpoint — use complete-goal or cancel-goal instead.
+routerAdd('POST', '/api/custom/update-goal', (c) => {
+  const { requireParent, requireBody, findOrNull } = require(`${__hooks}/lib.js`)
+  requireParent(c)
+  const body = requireBody(c, {
+    goalId: '',
+    title: '',
+    description: '',
+    emoji: '',
+    category: '',
+    ownerKidId: '',
+    coinTarget: 0,
+    matchRate: -1,
+    visibility: '',
+    approvalRequired: false,
+  })
+  if (!body.goalId) throw new BadRequestError('goalId required.')
+
+  $app.dao().runInTransaction((txDao) => {
+    const rec = txDao.findRecordById('goals', body.goalId)
+    if (rec.getString('status') !== 'active') {
+      throw new BadRequestError('Only active goals can be edited.')
+    }
+
+    if (String(body.title || '').trim() !== '') {
+      rec.set('title', String(body.title).trim())
+    }
+    rec.set('description', String(body.description || '').trim())
+    rec.set('emoji', String(body.emoji || '').trim())
+    rec.set('category', String(body.category || '').trim())
+
+    if (body.ownerKidId !== undefined && body.ownerKidId !== rec.getString('ownerKidId')) {
+      // Refuse to change owner if any approved contributions exist — the
+      // refund logic on cancellation assumes the owner never changed.
+      const anyContribs = findOrNull(() =>
+        txDao.findFirstRecordByFilter(
+          'goal_contributions',
+          'goalId = {:g} && status = "approved"',
+          { g: body.goalId },
+        ),
+      )
+      if (anyContribs) {
+        throw new BadRequestError(
+          'Cannot change owner after contributions have been made. Cancel and recreate.',
+        )
+      }
+      rec.set('ownerKidId', body.ownerKidId || null)
+    }
+
+    const nt = Math.floor(Number(body.coinTarget) || 0)
+    if (nt >= 1) rec.set('coinTarget', nt)
+    if (Number(body.matchRate) >= 0) rec.set('matchRate', Number(body.matchRate))
+    if (['owner_only', 'family', 'private'].includes(String(body.visibility))) {
+      rec.set('visibility', String(body.visibility))
+    }
+    rec.set('approvalRequired', !!body.approvalRequired)
+    txDao.saveRecord(rec)
+  })
+  return c.json(200, { ok: true })
+})
+
+// POST /api/custom/cancel-goal  { goalId }
+// Marks a goal cancelled and refunds every approved contribution back to
+// the kid who made it. Pending contributions are marked denied (no refund
+// needed — those coins never left the kid's balance).
+routerAdd('POST', '/api/custom/cancel-goal', (c) => {
+  const { requireParent, requireBody, ensureBalance, writeLedger } = require(`${__hooks}/lib.js`)
+  const user = requireParent(c)
+  const body = requireBody(c, { goalId: '' })
+  if (!body.goalId) throw new BadRequestError('goalId required.')
+
+  $app.dao().runInTransaction((txDao) => {
+    const goal = txDao.findRecordById('goals', body.goalId)
+    if (goal.getString('status') === 'cancelled') {
+      throw new BadRequestError('Goal is already cancelled.')
+    }
+    if (goal.getString('status') === 'completed') {
+      throw new BadRequestError('Cannot cancel a completed goal.')
+    }
+    const goalTitle = goal.getString('title')
+
+    // Refund every approved contribution back to its contributor.
+    const approvedContribs = txDao.findRecordsByFilter(
+      'goal_contributions',
+      'goalId = {:g} && status = "approved"',
+      '',
+      1000,
+      0,
+      { g: body.goalId },
+    )
+    for (const contrib of approvedContribs) {
+      const kidId = contrib.getString('kidId')
+      const coins = contrib.getInt('coinAmount')
+      const bal = ensureBalance(txDao, kidId)
+      bal.set('coinBalance', bal.getInt('coinBalance') + coins)
+      txDao.saveRecord(bal)
+      writeLedger(txDao, {
+        kidId,
+        type: 'refund_coin_goal',
+        amount: coins,
+        note: `Refund from cancelled goal: ${goalTitle}`,
+        refId: goal.id,
+        by: user.id,
+      })
+      contrib.set('status', 'refunded')
+      txDao.saveRecord(contrib)
+    }
+
+    // Mark still-pending contributions denied (no balance change needed).
+    const pendingContribs = txDao.findRecordsByFilter(
+      'goal_contributions',
+      'goalId = {:g} && status = "pending"',
+      '',
+      1000,
+      0,
+      { g: body.goalId },
+    )
+    for (const contrib of pendingContribs) {
+      contrib.set('status', 'denied')
+      txDao.saveRecord(contrib)
+    }
+
+    goal.set('status', 'cancelled')
+    goal.set('cancelledAt', new Date().toISOString())
+    txDao.saveRecord(goal)
+  })
+  return c.json(200, { ok: true })
+})
+
+// POST /api/custom/contribute-to-goal  { goalId, kidId, coins }
+// Kid (or parent/dashboard on kid's behalf) contributes to a goal. If the
+// goal's approvalRequired flag is on, the contribution is created as
+// 'pending' and the coins stay on the kid's balance until a parent
+// approves. Otherwise the coins leave the balance immediately, a match is
+// applied, and if the goal's target is reached the goal flips to 'reached'
+// awaiting a parent completion approval.
+routerAdd('POST', '/api/custom/contribute-to-goal', (c) => {
+  const {
+    requireAuthedForKid,
+    requireBody,
+    ensureBalance,
+    writeLedger,
+    sendWebPushToAllParents,
+    findOrNull,
+  } = require(`${__hooks}/lib.js`)
+  const body = requireBody(c, { goalId: '', kidId: '', coins: 0 })
+  if (!body.goalId) throw new BadRequestError('goalId required.')
+  if (!body.kidId) throw new BadRequestError('kidId required.')
+  const coins = Math.floor(Number(body.coins) || 0)
+  if (coins < 1) throw new BadRequestError('coins must be at least 1.')
+  const user = requireAuthedForKid(c, body.kidId)
+
+  let kidName = 'A kid'
+  let goalReached = false
+  let goalTitleForNotify = ''
+  let approvalPath = false
+
+  $app.dao().runInTransaction((txDao) => {
+    const goal = txDao.findRecordById('goals', body.goalId)
+    if (goal.getString('status') !== 'active') {
+      throw new BadRequestError('This goal is not accepting contributions.')
+    }
+    const owner = goal.getString('ownerKidId')
+    if (owner && owner !== body.kidId) {
+      throw new BadRequestError('Only the goal owner can contribute to this goal.')
+    }
+    const kid = findOrNull(() => txDao.findRecordById('kids', body.kidId))
+    if (kid) kidName = kid.getString('displayName') || kidName
+
+    const approvalRequired = !!goal.getBool('approvalRequired')
+    approvalPath = approvalRequired
+
+    if (approvalRequired) {
+      const col = txDao.findCollectionByNameOrId('goal_contributions')
+      const rec = new Record(col, {
+        goalId: goal.id,
+        kidId: body.kidId,
+        coinAmount: coins,
+        matchAmount: 0,
+        status: 'pending',
+      })
+      txDao.saveRecord(rec)
+      goalTitleForNotify = goal.getString('title')
+      return
+    }
+
+    // Direct-approve path — debit balance, snapshot match, write ledger.
+    const bal = ensureBalance(txDao, body.kidId)
+    const cur = bal.getInt('coinBalance')
+    if (cur < coins) {
+      throw new BadRequestError(`Not enough coins — needs ${coins}, has ${cur}.`)
+    }
+    bal.set('coinBalance', cur - coins)
+    txDao.saveRecord(bal)
+
+    const matchRate = Number(goal.getFloat('matchRate') || 0)
+    const matchAmount = Math.floor(coins * matchRate)
+
+    const col = txDao.findCollectionByNameOrId('goal_contributions')
+    const rec = new Record(col, {
+      goalId: goal.id,
+      kidId: body.kidId,
+      coinAmount: coins,
+      matchAmount,
+      status: 'approved',
+      approvedBy: user.id,
+      approvedAt: new Date().toISOString(),
+    })
+    txDao.saveRecord(rec)
+
+    writeLedger(txDao, {
+      kidId: body.kidId,
+      type: 'contribute_coin_goal',
+      amount: -coins,
+      note: `Contributed to goal: ${goal.getString('title')}`,
+      refId: goal.id,
+      by: user.id,
+    })
+
+    const contribs = txDao.findRecordsByFilter(
+      'goal_contributions',
+      'goalId = {:g} && status = "approved"',
+      '',
+      10000,
+      0,
+      { g: goal.id },
+    )
+    let totalContrib = 0
+    let totalMatch = 0
+    for (const cc of contribs) {
+      totalContrib += cc.getInt('coinAmount')
+      totalMatch += cc.getInt('matchAmount')
+    }
+    if (totalContrib + totalMatch >= goal.getInt('coinTarget')) {
+      goal.set('status', 'reached')
+      txDao.saveRecord(goal)
+      goalReached = true
+      goalTitleForNotify = goal.getString('title')
+    }
+  })
+
+  if (approvalPath && goalTitleForNotify) {
+    sendWebPushToAllParents(
+      `🎯 ${kidName} wants to contribute`,
+      `${coins} 🪙 toward "${goalTitleForNotify}"`,
+      { tag: 'chore-coin-goal-pending', clickUrl: '/approvals' },
+    )
+  }
+  if (goalReached) {
+    sendWebPushToAllParents(
+      `🎯 Goal reached: ${goalTitleForNotify}`,
+      `${kidName} pushed it over the top — approve to complete.`,
+      { tag: 'chore-coin-goal-reached', clickUrl: '/approvals' },
+    )
+  }
+  return c.json(200, { ok: true, reached: goalReached, pending: approvalPath })
+})
+
+// POST /api/custom/approve-goal-contribution  { contributionId }
+routerAdd('POST', '/api/custom/approve-goal-contribution', (c) => {
+  const {
+    requireParent,
+    requireBody,
+    ensureBalance,
+    writeLedger,
+    sendWebPushToAllParents,
+    findOrNull,
+  } = require(`${__hooks}/lib.js`)
+  const user = requireParent(c)
+  const body = requireBody(c, { contributionId: '' })
+  if (!body.contributionId) throw new BadRequestError('contributionId required.')
+
+  let goalReached = false
+  let goalTitleForNotify = ''
+  let kidName = 'A kid'
+
+  $app.dao().runInTransaction((txDao) => {
+    const contrib = txDao.findRecordById('goal_contributions', body.contributionId)
+    if (contrib.getString('status') !== 'pending') {
+      throw new BadRequestError('Contribution is not pending.')
+    }
+    const goal = txDao.findRecordById('goals', contrib.getString('goalId'))
+    if (goal.getString('status') !== 'active') {
+      throw new BadRequestError('The goal is no longer accepting contributions.')
+    }
+    const kidId = contrib.getString('kidId')
+    const coins = contrib.getInt('coinAmount')
+
+    const bal = ensureBalance(txDao, kidId)
+    const cur = bal.getInt('coinBalance')
+    if (cur < coins) {
+      throw new BadRequestError(`Not enough coins — needs ${coins}, has ${cur}.`)
+    }
+    bal.set('coinBalance', cur - coins)
+    txDao.saveRecord(bal)
+
+    const matchRate = Number(goal.getFloat('matchRate') || 0)
+    const matchAmount = Math.floor(coins * matchRate)
+
+    contrib.set('status', 'approved')
+    contrib.set('matchAmount', matchAmount)
+    contrib.set('approvedBy', user.id)
+    contrib.set('approvedAt', new Date().toISOString())
+    txDao.saveRecord(contrib)
+
+    writeLedger(txDao, {
+      kidId,
+      type: 'contribute_coin_goal',
+      amount: -coins,
+      note: `Contributed to goal: ${goal.getString('title')}`,
+      refId: goal.id,
+      by: user.id,
+    })
+
+    const kid = findOrNull(() => txDao.findRecordById('kids', kidId))
+    if (kid) kidName = kid.getString('displayName') || kidName
+
+    const contribs = txDao.findRecordsByFilter(
+      'goal_contributions',
+      'goalId = {:g} && status = "approved"',
+      '',
+      10000,
+      0,
+      { g: goal.id },
+    )
+    let totalContrib = 0
+    let totalMatch = 0
+    for (const cc of contribs) {
+      totalContrib += cc.getInt('coinAmount')
+      totalMatch += cc.getInt('matchAmount')
+    }
+    if (totalContrib + totalMatch >= goal.getInt('coinTarget')) {
+      goal.set('status', 'reached')
+      txDao.saveRecord(goal)
+      goalReached = true
+      goalTitleForNotify = goal.getString('title')
+    }
+  })
+
+  if (goalReached) {
+    sendWebPushToAllParents(
+      `🎯 Goal reached: ${goalTitleForNotify}`,
+      `${kidName} pushed it over the top — approve to complete.`,
+      { tag: 'chore-coin-goal-reached', clickUrl: '/approvals' },
+    )
+  }
+  return c.json(200, { ok: true, reached: goalReached })
+})
+
+// POST /api/custom/deny-goal-contribution  { contributionId, note? }
+routerAdd('POST', '/api/custom/deny-goal-contribution', (c) => {
+  const { requireParent, requireBody } = require(`${__hooks}/lib.js`)
+  const user = requireParent(c)
+  const body = requireBody(c, { contributionId: '', note: '' })
+  if (!body.contributionId) throw new BadRequestError('contributionId required.')
+
+  $app.dao().runInTransaction((txDao) => {
+    const contrib = txDao.findRecordById('goal_contributions', body.contributionId)
+    if (contrib.getString('status') !== 'pending') {
+      throw new BadRequestError('Contribution is not pending.')
+    }
+    contrib.set('status', 'denied')
+    contrib.set('approvedBy', user.id)
+    contrib.set('approvedAt', new Date().toISOString())
+    txDao.saveRecord(contrib)
+  })
+  return c.json(200, { ok: true })
+})
+
+// POST /api/custom/complete-goal  { goalId }
+// Parent approves a goal that hit its target. Marks status='completed';
+// writes an informational ledger entry per unique contributor so history
+// has a clear "goal completed" event. Doesn't move any coins — those were
+// already spent at contribution time.
+routerAdd('POST', '/api/custom/complete-goal', (c) => {
+  const { requireParent, requireBody, writeLedger, sendWebPushToKid } = require(
+    `${__hooks}/lib.js`,
+  )
+  const user = requireParent(c)
+  const body = requireBody(c, { goalId: '' })
+  if (!body.goalId) throw new BadRequestError('goalId required.')
+
+  let notifyKidIds = []
+  let goalTitle = ''
+
+  $app.dao().runInTransaction((txDao) => {
+    const goal = txDao.findRecordById('goals', body.goalId)
+    if (goal.getString('status') !== 'reached') {
+      throw new BadRequestError('Goal has not been reached yet.')
+    }
+    goalTitle = goal.getString('title')
+
+    const contribs = txDao.findRecordsByFilter(
+      'goal_contributions',
+      'goalId = {:g} && status = "approved"',
+      '',
+      10000,
+      0,
+      { g: goal.id },
+    )
+    const contributorKidIds = {}
+    for (const cc of contribs) {
+      contributorKidIds[cc.getString('kidId')] = true
+    }
+    for (const kidId of Object.keys(contributorKidIds)) {
+      writeLedger(txDao, {
+        kidId,
+        type: 'complete_coin_goal',
+        amount: 0,
+        note: `Goal completed: ${goalTitle}`,
+        refId: goal.id,
+        by: user.id,
+      })
+      notifyKidIds.push(kidId)
+    }
+
+    goal.set('status', 'completed')
+    goal.set('completedAt', new Date().toISOString())
+    goal.set('completedBy', user.id)
+    txDao.saveRecord(goal)
+  })
+
+  for (const kidId of notifyKidIds) {
+    sendWebPushToKid(kidId, '🎉 Goal completed!', `"${goalTitle}" — the family did it!`, {
+      tag: 'chore-coin-goal-complete',
+    })
+  }
+  return c.json(200, { ok: true })
+})
+
 // POST /api/custom/deny-reward  { requestId, note? }
 routerAdd('POST', '/api/custom/deny-reward', (c) => {
   const { requireParent, requireBody, sendWebPushToKid } = require(`${__hooks}/lib.js`)

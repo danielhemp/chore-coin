@@ -15,6 +15,9 @@ const TYPE_LABEL: Record<LedgerType, string> = {
   adjust_coin: '⚖️ Coin adj.',
   adjust_base_screen: '⚖️ Screen adj.',
   carryover_base_screen: '↪︎ Carry over',
+  contribute_coin_goal: '💰 Goal contrib.',
+  refund_coin_goal: '↩︎ Goal refund',
+  complete_coin_goal: '🎉 Goal cash-out',
 }
 
 export default function History() {

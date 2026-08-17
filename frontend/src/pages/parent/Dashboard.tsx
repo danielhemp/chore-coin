@@ -14,7 +14,9 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import {
   useActiveBonusChores,
+  useActiveGoals,
   useActiveRewardItems,
+  useApprovedContributionsForGoal,
   useBalance,
   useBaseChores,
   useDailyStatus,
@@ -26,6 +28,7 @@ import {
 } from '../../hooks/data'
 import {
   cancelRewardRequest,
+  contributeToGoal,
   markChoreDone,
   requestReward,
   requestScreenTime,
@@ -36,6 +39,7 @@ import {
   BASE_REWARD_MINUTES,
   type BonusChoreRecord,
   type CompletionRecord,
+  type GoalRecord,
   type KidRecord,
 } from '../../lib/types'
 
@@ -78,6 +82,115 @@ function useWakeLock(enabled: boolean) {
   }, [enabled])
 }
 
+/**
+ * A single goal row inside a KidTile. Own hook subscription per goal so
+ * progress bars update live as contributions get approved. Contribute
+ * buttons hide once the goal is reached / completed, so the kid sees the
+ * finish line but can't overshoot.
+ */
+function GoalTile({
+  goal,
+  balance,
+  busy,
+  onContribute,
+}: {
+  goal: GoalRecord
+  balance: number
+  busy: string | null
+  onContribute: (coins: number) => Promise<void> | void
+}) {
+  const { data: contribs } = useApprovedContributionsForGoal(goal.id)
+  const totalContrib = contribs.reduce((s, c) => s + c.coinAmount, 0)
+  const totalMatch = contribs.reduce((s, c) => s + (c.matchAmount ?? 0), 0)
+  const total = totalContrib + totalMatch
+  const pct = Math.min(100, Math.round((total / goal.coinTarget) * 100))
+  const reached = goal.status === 'reached'
+  const remainingCoinsForKid = Math.max(
+    0,
+    Math.ceil((goal.coinTarget - total) / (1 + (goal.matchRate ?? 0))),
+  )
+
+  // Quick-tap options — 1, 5, and "top it off" (exactly enough to reach the
+  // target given match rate). Skip options over the kid's balance or over the
+  // remaining needed amount so buttons don't overshoot.
+  const options: number[] = []
+  const candidates = [1, 5, 10]
+  for (const c of candidates) {
+    if (c <= balance && c <= remainingCoinsForKid && !options.includes(c)) options.push(c)
+  }
+  if (
+    remainingCoinsForKid > 0 &&
+    remainingCoinsForKid <= balance &&
+    !options.includes(remainingCoinsForKid)
+  ) {
+    options.push(remainingCoinsForKid)
+  }
+
+  return (
+    <li
+      className={`rounded-xl border p-3 ${
+        reached
+          ? 'border-emerald-800/60 bg-emerald-950/20'
+          : 'border-slate-800 bg-slate-950/40'
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-2 min-w-0">
+        <span className="text-xl leading-none shrink-0">{goal.emoji || '🎯'}</span>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium truncate">{goal.title}</div>
+          <div className="text-[10px] text-slate-400">
+            {!goal.ownerKidId && 'Family · '}
+            {goal.matchRate > 0 && `${goal.matchRate}× match · `}
+            {goal.approvalRequired && 'needs approval · '}
+            🪙 {total}/{goal.coinTarget}
+          </div>
+        </div>
+        <span
+          className={`text-xs shrink-0 ${
+            reached ? 'text-emerald-300 font-medium' : 'text-slate-400'
+          }`}
+        >
+          {pct}%
+        </span>
+      </div>
+      <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden mb-2">
+        <div
+          className={`h-full rounded-full ${reached ? 'bg-emerald-500' : 'bg-brand-500'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {reached ? (
+        <div className="text-[10px] text-emerald-300 text-center">
+          🎉 Target hit — waiting on parent
+        </div>
+      ) : options.length === 0 ? (
+        <div className="text-[10px] text-slate-500 text-center">
+          {balance === 0 ? 'Earn some coins to save toward this' : 'Balance too low to contribute'}
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {options.map((coins) => (
+            <button
+              key={coins}
+              className="btn-primary text-xs px-2 py-1 flex-1 min-w-0"
+              disabled={busy !== null}
+              onClick={() => onContribute(coins)}
+              title={
+                coins === remainingCoinsForKid && remainingCoinsForKid > 1
+                  ? `Reach the target with ${coins} 🪙`
+                  : `Contribute ${coins} 🪙`
+              }
+            >
+              +{coins}🪙
+              {coins === remainingCoinsForKid && remainingCoinsForKid > 1 && ' 🎯'}
+            </button>
+          ))}
+        </div>
+      )}
+    </li>
+  )
+}
+
 function KidTile({ kid }: { kid: KidRecord }) {
   const today = useLocalDate()
   const { balance } = useBalance(kid.id)
@@ -87,6 +200,21 @@ function KidTile({ kid }: { kid: KidRecord }) {
   const { data: recent } = useRecentCompletionsForKid(kid.id, 30)
   const { data: rewards } = useActiveRewardItems()
   const { data: pendingRewards } = usePendingRewardRequestsForKid(kid.id)
+  const { data: allGoals } = useActiveGoals()
+
+  // Goals shown on this kid's tile: their own goals (individual with owner ==
+  // this kid) plus every family goal. Private goals never show on tiles — those
+  // are parents-only. Reached goals stay visible so the kid can see the finish
+  // line but the contribute buttons hide.
+  const goalsForThisKid = useMemo<GoalRecord[]>(
+    () =>
+      allGoals.filter((g) => {
+        if (g.visibility === 'private') return false
+        if (!g.ownerKidId) return true // family goal
+        return g.ownerKidId === kid.id
+      }),
+    [allGoals, kid.id],
+  )
 
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -205,6 +333,9 @@ function KidTile({ kid }: { kid: KidRecord }) {
 
   const cancelReward = (requestId: string) =>
     runWithBusy(`rc-${requestId}`, () => cancelRewardRequest(requestId))
+
+  const contribute = (goalId: string, coins: number) =>
+    runWithBusy(`g-${goalId}-${coins}`, () => contributeToGoal(goalId, kid.id, coins))
 
   // Standard screen-time asks — 4 quick-tap buttons matching the "spend base"
   // grid (5/15/30/60 min) so families have a consistent set of increments.
@@ -407,6 +538,26 @@ function KidTile({ kid }: { kid: KidRecord }) {
           </>
         )
       })()}
+
+      {/* Savings goals — the kid's own goals and any family goal. */}
+      {goalsForThisKid.length > 0 && (
+        <div>
+          <div className="text-xs uppercase tracking-wide text-slate-500 mb-2">
+            💰 Savings goals
+          </div>
+          <ul className="space-y-2">
+            {goalsForThisKid.map((g) => (
+              <GoalTile
+                key={g.id}
+                goal={g}
+                balance={balance}
+                busy={busy}
+                onContribute={(coins) => contribute(g.id, coins)}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Redemption options — only when this kid has coins to spend. */}
       {balance > 0 && (

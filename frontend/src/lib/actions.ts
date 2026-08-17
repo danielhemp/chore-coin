@@ -233,3 +233,91 @@ export function deleteDashboard(userId: string) {
 export function resetDashboardPin(userId: string, pin: string) {
   return callCustom('reset-dashboard-pin', { userId, pin })
 }
+
+// ---- Savings goals (parent + kid) ---------------------------------------
+
+/**
+ * Create a new savings goal. ownerKidId=undefined means family goal.
+ */
+export function createGoal(fields: {
+  title: string
+  description?: string
+  emoji?: string
+  category?: string
+  ownerKidId?: string
+  coinTarget: number
+  matchRate?: number
+  visibility: 'owner_only' | 'family' | 'private'
+  approvalRequired?: boolean
+}) {
+  return callCustom<{ ok: boolean; id: string }>('create-goal', {
+    title: fields.title,
+    description: fields.description ?? '',
+    emoji: fields.emoji ?? '',
+    category: fields.category ?? '',
+    ownerKidId: fields.ownerKidId ?? '',
+    coinTarget: fields.coinTarget,
+    matchRate: fields.matchRate ?? 0,
+    visibility: fields.visibility,
+    approvalRequired: fields.approvalRequired ?? false,
+  })
+}
+
+export function updateGoal(
+  goalId: string,
+  patch: {
+    title?: string
+    description?: string
+    emoji?: string
+    category?: string
+    ownerKidId?: string
+    coinTarget?: number
+    matchRate?: number
+    visibility?: 'owner_only' | 'family' | 'private'
+    approvalRequired?: boolean
+  },
+) {
+  return callCustom('update-goal', {
+    goalId,
+    title: patch.title ?? '',
+    description: patch.description ?? '',
+    emoji: patch.emoji ?? '',
+    category: patch.category ?? '',
+    ownerKidId: patch.ownerKidId ?? '',
+    coinTarget: patch.coinTarget ?? 0,
+    matchRate: patch.matchRate ?? -1,
+    visibility: patch.visibility ?? '',
+    approvalRequired: patch.approvalRequired ?? false,
+  })
+}
+
+export function cancelGoal(goalId: string) {
+  return callCustom('cancel-goal', { goalId })
+}
+
+export function completeGoal(goalId: string) {
+  return callCustom('complete-goal', { goalId })
+}
+
+/**
+ * Kid contributes coins toward a goal. If the goal's approvalRequired is
+ * on, the contribution is created as pending (coins stay on the balance).
+ * Otherwise coins leave immediately, match is applied, and the goal may
+ * auto-flip to 'reached'.
+ */
+export function contributeToGoal(goalId: string, kidId: string, coins: number) {
+  return callCustom<{ ok: boolean; reached: boolean; pending: boolean }>(
+    'contribute-to-goal',
+    { goalId, kidId, coins },
+  )
+}
+
+export function approveGoalContribution(contributionId: string) {
+  return callCustom<{ ok: boolean; reached: boolean }>('approve-goal-contribution', {
+    contributionId,
+  })
+}
+
+export function denyGoalContribution(contributionId: string, note?: string) {
+  return callCustom('deny-goal-contribution', { contributionId, note })
+}

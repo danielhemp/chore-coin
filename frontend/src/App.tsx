@@ -12,6 +12,7 @@ import ManageKids from './pages/parent/ManageKids'
 import ManageBaseChores from './pages/parent/ManageBaseChores'
 import ManageBonusChores from './pages/parent/ManageBonusChores'
 import ManageRewards from './pages/parent/ManageRewards'
+import ManageGoals from './pages/parent/ManageGoals'
 import Redemptions from './pages/parent/Redemptions'
 import Settings from './pages/parent/Settings'
 import History from './pages/parent/History'
@@ -94,6 +95,7 @@ export default function App() {
         <Route path="/kids/:kidId/base-chores" element={<ManageBaseChores />} />
         <Route path="/bonus-chores" element={<ManageBonusChores />} />
         <Route path="/rewards" element={<ManageRewards />} />
+        <Route path="/goals" element={<ManageGoals />} />
         <Route path="/redemptions" element={<Redemptions />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/history" element={<History />} />

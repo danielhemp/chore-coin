@@ -106,6 +106,9 @@ export type LedgerType =
   | 'adjust_coin'
   | 'adjust_base_screen'
   | 'carryover_base_screen'
+  | 'contribute_coin_goal'
+  | 'refund_coin_goal'
+  | 'complete_coin_goal'
 
 // ---- Reward items + requests -----------------------------------------------
 
@@ -157,6 +160,46 @@ export interface LedgerFields {
 }
 
 export type LedgerRecord = WithMeta<LedgerFields>
+
+// ---- Savings goals ---------------------------------------------------------
+
+export type GoalStatus = 'active' | 'reached' | 'completed' | 'cancelled'
+export type GoalVisibility = 'owner_only' | 'family' | 'private'
+
+export interface GoalFields {
+  title: string
+  description?: string
+  emoji?: string
+  category?: string
+  /** Empty/null = family goal. Otherwise the kid who owns this goal. */
+  ownerKidId?: string
+  coinTarget: number
+  /** 0 = no parent match; 0.5 = parent adds half a coin per kid coin; 2 = triple total. */
+  matchRate: number
+  visibility: GoalVisibility
+  approvalRequired?: boolean
+  status: GoalStatus
+  createdBy?: string
+  completedAt?: string
+  completedBy?: string
+  cancelledAt?: string
+}
+
+export type GoalRecord = WithMeta<GoalFields>
+
+export type GoalContributionStatus = 'approved' | 'pending' | 'denied' | 'refunded'
+
+export interface GoalContributionFields {
+  goalId: string
+  kidId: string
+  coinAmount: number
+  matchAmount?: number
+  status: GoalContributionStatus
+  approvedBy?: string
+  approvedAt?: string
+}
+
+export type GoalContributionRecord = WithMeta<GoalContributionFields>
 
 /** Business constants — must stay in sync with pb_hooks/lib.js. */
 export const COIN_TO_SCREEN_MINUTES = 5
