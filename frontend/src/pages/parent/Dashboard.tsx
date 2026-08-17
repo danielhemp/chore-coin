@@ -570,7 +570,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="flex-1 p-6 overflow-auto">
+      <main className="flex-1 p-6 overflow-hidden flex flex-col">
         {loading ? (
           <div className="text-slate-400">Loading…</div>
         ) : kids.length === 0 ? (
@@ -578,16 +578,25 @@ export default function Dashboard() {
             No kids yet. Add some from the parent home page.
           </div>
         ) : (
+          // Horizontal scroller — every kid tile is a fixed-width column;
+          // when there are more kids than fit on the screen the parent /
+          // dashboard user swipes left-right instead of the layout wrapping
+          // onto multiple rows. Better for a wall-mounted tablet where a
+          // vertical scroll makes each tile shorter than it needs to be.
+          // The container's `flex-1 overflow-x-auto` keeps the height in
+          // check so each tile's own scrollable body still works.
           <div
-            className="grid gap-6"
-            style={{
-              gridTemplateColumns: `repeat(auto-fit, minmax(${
-                kids.length === 1 ? '600px' : '360px'
-              }, 1fr))`,
-            }}
+            className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory flex-1"
+            style={{ scrollbarGutter: 'stable' }}
           >
             {kids.map((k) => (
-              <KidTile key={k.id} kid={k} />
+              <div
+                key={k.id}
+                className="shrink-0 snap-start"
+                style={{ width: kids.length === 1 ? 600 : 380 }}
+              >
+                <KidTile kid={k} />
+              </div>
             ))}
           </div>
         )}

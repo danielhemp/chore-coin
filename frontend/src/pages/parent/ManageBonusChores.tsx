@@ -1,10 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { TabBarLayout, PageHeader } from '../../components/Layout'
+import { TabBarLayout, PageHeader, Modal } from '../../components/Layout'
 import { PARENT_TABS } from './ParentDashboard'
 import { useAllBonusChores, useKids } from '../../hooks/data'
 import { createBonusChore, deleteBonusChore, updateBonusChore } from '../../lib/actions'
-import type { BonusAssigned, BonusChoreFields, BonusRecurring } from '../../lib/types'
+import type {
+  BonusAssigned,
+  BonusChoreFields,
+  BonusChoreRecord,
+  BonusRecurring,
+  KidRecord,
+} from '../../lib/types'
 
 export default function ManageBonusChores() {
   const { data: chores, loading } = useAllBonusChores()
@@ -19,6 +25,8 @@ export default function ManageBonusChores() {
   const [maxPerDay, setMaxPerDay] = useState('0')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+
+  const [editing, setEditing] = useState<BonusChoreRecord | null>(null)
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,9 +55,7 @@ export default function ManageBonusChores() {
     }
   }
 
-  const patch = async (id: string, p: Partial<BonusChoreFields>) => {
-    await updateBonusChore(id, p)
-  }
+  const toggleActive = (c: BonusChoreRecord) => updateBonusChore(c.id, { active: !c.active })
 
   const remove = async (id: string) => {
     if (!window.confirm('Delete this bonus chore? History stays intact.')) return
@@ -89,7 +95,6 @@ export default function ManageBonusChores() {
               value={coinValue}
               onChange={(e) => setCoinValue(e.target.value)}
               onBlur={() => {
-                // Snap back to a valid value only when the user leaves the field.
                 const n = Math.max(1, Math.floor(Number(coinValue)) || 1)
                 setCoinValue(String(n))
               }}
@@ -132,31 +137,7 @@ export default function ManageBonusChores() {
         </div>
         <div>
           <label className="block text-xs text-slate-400 mb-1">Who can do it?</label>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setAssigned('all')}
-              className={`pill ${assigned === 'all' ? 'bg-brand-600 text-white' : ''}`}
-            >
-              Everyone
-            </button>
-            {kids.map((k) => {
-              const selected = Array.isArray(assigned) && assigned.includes(k.id)
-              return (
-                <button
-                  type="button"
-                  key={k.id}
-                  onClick={() => {
-                    const cur = Array.isArray(assigned) ? assigned : []
-                    setAssigned(selected ? cur.filter((x) => x !== k.id) : [...cur, k.id])
-                  }}
-                  className={`pill ${selected ? 'bg-brand-600 text-white' : ''}`}
-                >
-                  {k.avatarEmoji} {k.displayName}
-                </button>
-              )
-            })}
-          </div>
+          <AssignPicker kids={kids} value={assigned} onChange={setAssigned} />
         </div>
         {err && <div className="text-sm text-red-400">{err}</div>}
         <button className="btn-primary w-full" disabled={busy || !title.trim()}>
@@ -188,46 +169,13 @@ export default function ManageBonusChores() {
                 <div className="flex flex-wrap gap-1 justify-end sm:justify-start shrink-0">
                   <button
                     className="btn-ghost !px-3 !py-2 text-sm"
-                    aria-label="Rename"
-                    title="Rename"
-                    onClick={() => {
-                      const t = window.prompt('New title', c.title)
-                      if (t?.trim()) patch(c.id, { title: t.trim() })
-                    }}
+                    onClick={() => setEditing(c)}
                   >
-                    ✎
+                    ✎ Edit
                   </button>
                   <button
                     className="btn-ghost !px-3 !py-2 text-sm"
-                    aria-label="Edit coin value"
-                    title="Edit coin value"
-                    onClick={() => {
-                      const v = window.prompt('New coin value', String(c.coinValue))
-                      const n = Number(v)
-                      if (v && Number.isFinite(n) && n > 0) patch(c.id, { coinValue: n })
-                    }}
-                  >
-                    🪙
-                  </button>
-                  <button
-                    className="btn-ghost !px-3 !py-2 text-sm"
-                    aria-label="Set daily cap"
-                    title="Set daily cap"
-                    onClick={() => {
-                      const v = window.prompt(
-                        'Max approvals per kid per day (0 = no cap)',
-                        String(c.maxPerDay ?? 0),
-                      )
-                      const n = Number(v)
-                      if (v !== null && Number.isFinite(n) && n >= 0)
-                        patch(c.id, { maxPerDay: n })
-                    }}
-                  >
-                    #/day
-                  </button>
-                  <button
-                    className="btn-ghost !px-3 !py-2 text-sm"
-                    onClick={() => patch(c.id, { active: !c.active })}
+                    onClick={() => toggleActive(c)}
                   >
                     {c.active ? 'Pause' : 'Resume'}
                   </button>
@@ -245,6 +193,215 @@ export default function ManageBonusChores() {
           ))}
         </ul>
       )}
+
+      <Modal open={!!editing} onClose={() => setEditing(null)} title="Edit bonus chore">
+        {editing && (
+          <EditBonusChoreForm
+            chore={editing}
+            kids={kids}
+            onSaved={() => setEditing(null)}
+            onCancel={() => setEditing(null)}
+          />
+        )}
+      </Modal>
     </TabBarLayout>
+  )
+}
+
+/**
+ * Full-field edit form for a bonus chore. Rendered inside the Modal from
+ * the parent Manage page. Every field the create form has is editable
+ * here — title, coin value, frequency, per-day cap, and who can do it.
+ * Local state seeds from the record on mount; Save calls updateBonusChore
+ * with the full field set and then closes the modal via onSaved().
+ */
+function EditBonusChoreForm({
+  chore,
+  kids,
+  onSaved,
+  onCancel,
+}: {
+  chore: BonusChoreRecord
+  kids: KidRecord[]
+  onSaved: () => void
+  onCancel: () => void
+}) {
+  const [title, setTitle] = useState(chore.title)
+  const [coinValue, setCoinValue] = useState(String(chore.coinValue))
+  const [assigned, setAssigned] = useState<BonusAssigned>(chore.assignedTo)
+  const [recurring, setRecurring] = useState<BonusRecurring>(chore.recurring)
+  const [maxPerDay, setMaxPerDay] = useState(String(chore.maxPerDay ?? 0))
+  const [active, setActive] = useState<boolean>(chore.active !== false)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  // Re-seed if the parent passes a different chore into the same open modal
+  // (defensive — shouldn't happen with the current flow but avoids stale
+  // state if this component is later reused).
+  useEffect(() => {
+    setTitle(chore.title)
+    setCoinValue(String(chore.coinValue))
+    setAssigned(chore.assignedTo)
+    setRecurring(chore.recurring)
+    setMaxPerDay(String(chore.maxPerDay ?? 0))
+    setActive(chore.active !== false)
+  }, [chore])
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const t = title.trim()
+    if (!t) {
+      setErr('Title is required.')
+      return
+    }
+    const patch: Partial<BonusChoreFields> = {
+      title: t,
+      coinValue: Math.max(1, Math.floor(Number(coinValue)) || 1),
+      assignedTo: assigned,
+      recurring,
+      maxPerDay: Math.max(0, Math.floor(Number(maxPerDay)) || 0),
+      active,
+    }
+    setBusy(true)
+    setErr(null)
+    try {
+      await updateBonusChore(chore.id, patch)
+      onSaved()
+    } catch (e: any) {
+      setErr(e?.message || 'Save failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="space-y-3">
+      <div>
+        <label className="block text-xs text-slate-400 mb-1">Title</label>
+        <input
+          className="input"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs text-slate-400 mb-1">Coins</label>
+          <input
+            className="input"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={coinValue}
+            onChange={(e) => setCoinValue(e.target.value)}
+            onBlur={() => {
+              const n = Math.max(1, Math.floor(Number(coinValue)) || 1)
+              setCoinValue(String(n))
+            }}
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-slate-400 mb-1">Frequency</label>
+          <select
+            className="input"
+            value={recurring}
+            onChange={(e) => setRecurring(e.target.value as BonusRecurring)}
+          >
+            <option value="anytime">Anytime (repeatable)</option>
+            <option value="daily">Once per day</option>
+            <option value="once">One-time</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs text-slate-400 mb-1">
+          Max approvals per kid per day (0 = no cap)
+        </label>
+        <input
+          className="input"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={maxPerDay}
+          onChange={(e) => setMaxPerDay(e.target.value)}
+          onBlur={() => {
+            const n = Math.max(0, Math.floor(Number(maxPerDay)) || 0)
+            setMaxPerDay(String(n))
+          }}
+        />
+      </div>
+      <div>
+        <label className="block text-xs text-slate-400 mb-1">Who can do it?</label>
+        <AssignPicker kids={kids} value={assigned} onChange={setAssigned} />
+      </div>
+      <div>
+        <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={active}
+            onChange={(e) => setActive(e.target.checked)}
+            className="w-4 h-4"
+          />
+          Active (kids can see + submit this chore)
+        </label>
+      </div>
+      {err && <div className="text-sm text-red-400">{err}</div>}
+      <div className="flex gap-2 pt-2">
+        <button
+          type="button"
+          className="btn-secondary flex-1"
+          onClick={onCancel}
+          disabled={busy}
+        >
+          Cancel
+        </button>
+        <button className="btn-primary flex-1" type="submit" disabled={busy || !title.trim()}>
+          {busy ? 'Saving…' : 'Save changes'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+/**
+ * The pill-picker for "Everyone" vs individual kids. Shared between the
+ * create form and the edit modal so the two places stay visually identical.
+ */
+function AssignPicker({
+  kids,
+  value,
+  onChange,
+}: {
+  kids: KidRecord[]
+  value: BonusAssigned
+  onChange: (v: BonusAssigned) => void
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => onChange('all')}
+        className={`pill ${value === 'all' ? 'bg-brand-600 text-white' : ''}`}
+      >
+        Everyone
+      </button>
+      {kids.map((k) => {
+        const selected = Array.isArray(value) && value.includes(k.id)
+        return (
+          <button
+            type="button"
+            key={k.id}
+            onClick={() => {
+              const cur = Array.isArray(value) ? value : []
+              onChange(selected ? cur.filter((x) => x !== k.id) : [...cur, k.id])
+            }}
+            className={`pill ${selected ? 'bg-brand-600 text-white' : ''}`}
+          >
+            {k.avatarEmoji} {k.displayName}
+          </button>
+        )
+      })}
+    </div>
   )
 }

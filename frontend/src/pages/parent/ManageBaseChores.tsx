@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { TabBarLayout, PageHeader } from '../../components/Layout'
+import { TabBarLayout, PageHeader, Modal } from '../../components/Layout'
 import { PARENT_TABS } from './ParentDashboard'
 import { useBaseChores, useKid } from '../../hooks/data'
 import {
@@ -8,6 +8,7 @@ import {
   deleteBaseChore,
   updateBaseChore,
 } from '../../lib/actions'
+import type { BaseChoreFields, BaseChoreRecord } from '../../lib/types'
 
 export default function ManageBaseChores() {
   const { kidId } = useParams<{ kidId: string }>()
@@ -16,6 +17,8 @@ export default function ManageBaseChores() {
   const [title, setTitle] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+
+  const [editing, setEditing] = useState<BaseChoreRecord | null>(null)
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,15 +36,7 @@ export default function ManageBaseChores() {
     }
   }
 
-  const toggle = async (id: string, active: boolean) => {
-    await updateBaseChore(id, { active: !active })
-  }
-
-  const rename = async (id: string, currentTitle: string) => {
-    const t = window.prompt('New title', currentTitle)
-    if (!t?.trim()) return
-    await updateBaseChore(id, { title: t.trim() })
-  }
+  const toggle = (c: BaseChoreRecord) => updateBaseChore(c.id, { active: !c.active })
 
   const remove = async (id: string) => {
     if (!window.confirm('Delete this chore? History stays intact.')) return
@@ -118,15 +113,13 @@ export default function ManageBaseChores() {
                 </button>
                 <button
                   className="btn-ghost !px-3 !py-2 text-sm"
-                  aria-label="Rename"
-                  title="Rename"
-                  onClick={() => rename(c.id, c.title)}
+                  onClick={() => setEditing(c)}
                 >
-                  ✎
+                  ✎ Edit
                 </button>
                 <button
                   className="btn-ghost !px-3 !py-2 text-sm"
-                  onClick={() => toggle(c.id, c.active)}
+                  onClick={() => toggle(c)}
                 >
                   {c.active ? 'Pause' : 'Resume'}
                 </button>
@@ -143,6 +136,104 @@ export default function ManageBaseChores() {
           ))}
         </ul>
       )}
+
+      <Modal open={!!editing} onClose={() => setEditing(null)} title="Edit base chore">
+        {editing && (
+          <EditBaseChoreForm
+            chore={editing}
+            onSaved={() => setEditing(null)}
+            onCancel={() => setEditing(null)}
+          />
+        )}
+      </Modal>
     </TabBarLayout>
+  )
+}
+
+/**
+ * Edit form for a base chore. Title + active are the only field-level
+ * attributes worth editing here; order is handled inline by the ↑/↓
+ * buttons on the list itself so the parent can see the resulting order
+ * as they change it.
+ */
+function EditBaseChoreForm({
+  chore,
+  onSaved,
+  onCancel,
+}: {
+  chore: BaseChoreRecord
+  onSaved: () => void
+  onCancel: () => void
+}) {
+  const [title, setTitle] = useState(chore.title)
+  const [active, setActive] = useState<boolean>(chore.active !== false)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  useEffect(() => {
+    setTitle(chore.title)
+    setActive(chore.active !== false)
+  }, [chore])
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const t = title.trim()
+    if (!t) {
+      setErr('Title is required.')
+      return
+    }
+    const patch: Partial<BaseChoreFields> = { title: t, active }
+    setBusy(true)
+    setErr(null)
+    try {
+      await updateBaseChore(chore.id, patch)
+      onSaved()
+    } catch (e: any) {
+      setErr(e?.message || 'Save failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="space-y-3">
+      <div>
+        <label className="block text-xs text-slate-400 mb-1">Title</label>
+        <input
+          className="input"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+      </div>
+      <div>
+        <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={active}
+            onChange={(e) => setActive(e.target.checked)}
+            className="w-4 h-4"
+          />
+          Active (counts toward today's screen time when completed)
+        </label>
+      </div>
+      <div className="text-xs text-slate-500">
+        To reorder chores, use the ↑ and ↓ buttons on the list itself.
+      </div>
+      {err && <div className="text-sm text-red-400">{err}</div>}
+      <div className="flex gap-2 pt-2">
+        <button
+          type="button"
+          className="btn-secondary flex-1"
+          onClick={onCancel}
+          disabled={busy}
+        >
+          Cancel
+        </button>
+        <button className="btn-primary flex-1" type="submit" disabled={busy || !title.trim()}>
+          {busy ? 'Saving…' : 'Save changes'}
+        </button>
+      </div>
+    </form>
   )
 }
