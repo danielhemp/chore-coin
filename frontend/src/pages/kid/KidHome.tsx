@@ -20,7 +20,7 @@ import {
   requestReward,
   spendBaseScreenTime,
 } from '../../lib/actions'
-import { formatShortDate } from '../../lib/dates'
+import { dayOfWeekFromLocalDate, formatShortDate } from '../../lib/dates'
 import { BASE_REWARD_MINUTES, type CompletionRecord } from '../../lib/types'
 
 const KID_TABS = [
@@ -48,14 +48,18 @@ export default function KidHome() {
   const [rewardErr, setRewardErr] = useState<string | null>(null)
   const [rewardMsg, setRewardMsg] = useState<string | null>(null)
 
+  const todayDow = dayOfWeekFromLocalDate(today)
   const bonusForMe = useMemo(
     () =>
       bonusChores.filter((c) => {
+        // Day-of-week filter — empty array means "every day".
+        const dows = Array.isArray(c.daysOfWeek) ? c.daysOfWeek : []
+        if (dows.length > 0 && dows.length < 7 && !dows.includes(todayDow)) return false
         if (c.assignedTo === 'all') return true
         if (Array.isArray(c.assignedTo) && kidId) return c.assignedTo.includes(kidId)
         return false
       }),
-    [bonusChores, kidId],
+    [bonusChores, kidId, todayDow],
   )
 
   // Derive per-chore status: pending trumps rejected; rejection is only shown when

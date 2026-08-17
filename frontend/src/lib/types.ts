@@ -54,6 +54,12 @@ export interface BonusChoreFields {
   recurring: BonusRecurring
   /** 0 or missing = no per-day cap. >=1 = max approvals per kid per local day. */
   maxPerDay?: number
+  /**
+   * Empty/missing = available every day. Otherwise ints 0..6 (0 = Sun … 6 = Sat)
+   * of the days when this chore is available. Frontend hides it on other days;
+   * approve-completion enforces the same rule server-side.
+   */
+  daysOfWeek?: number[]
   active: boolean
 }
 

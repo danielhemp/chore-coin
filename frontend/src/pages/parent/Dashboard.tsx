@@ -34,7 +34,7 @@ import {
   requestScreenTime,
   spendBaseScreenTime,
 } from '../../lib/actions'
-import { formatShortDate } from '../../lib/dates'
+import { dayOfWeekFromLocalDate, formatShortDate } from '../../lib/dates'
 import {
   BASE_REWARD_MINUTES,
   type BonusChoreRecord,
@@ -226,14 +226,18 @@ function KidTile({ kid }: { kid: KidRecord }) {
   const awarded = status?.baseAwarded
   const approvedBase = status?.approvedBaseChores ?? {}
 
+  const todayDow = dayOfWeekFromLocalDate(today)
   const bonusForMe: BonusChoreRecord[] = useMemo(
     () =>
       bonusChores.filter((c) => {
+        // Day-of-week filter — empty array means "every day".
+        const dows = Array.isArray(c.daysOfWeek) ? c.daysOfWeek : []
+        if (dows.length > 0 && dows.length < 7 && !dows.includes(todayDow)) return false
         if (c.assignedTo === 'all') return true
         if (Array.isArray(c.assignedTo)) return c.assignedTo.includes(kid.id)
         return false
       }),
-    [bonusChores, kid.id],
+    [bonusChores, kid.id, todayDow],
   )
 
   // Latest completion per chore + pending map (matches KidHome logic).

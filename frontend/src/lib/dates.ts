@@ -44,3 +44,16 @@ export function parsePbDate(s: string): Date {
   // PB returns "YYYY-MM-DD HH:mm:ss.SSSZ" — JS Date needs 'T' between date and time.
   return new Date(s.replace(' ', 'T'))
 }
+
+/**
+ * Day of week for a local-calendar date string (YYYY-MM-DD).
+ * 0 = Sunday … 6 = Saturday. Parses as noon-UTC to avoid any DST edge
+ * shifting the answer by a day.
+ */
+export function dayOfWeekFromLocalDate(iso: string): number {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay()
+}
+
+/** Short 3-letter weekday name for a 0-6 index. */
+export const DOW_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

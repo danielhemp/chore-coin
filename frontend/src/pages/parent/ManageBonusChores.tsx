@@ -4,6 +4,7 @@ import { TabBarLayout, PageHeader, Modal } from '../../components/Layout'
 import { PARENT_TABS } from './ParentDashboard'
 import { useAllBonusChores, useKids } from '../../hooks/data'
 import { createBonusChore, deleteBonusChore, updateBonusChore } from '../../lib/actions'
+import { DOW_SHORT } from '../../lib/dates'
 import type {
   BonusAssigned,
   BonusChoreFields,
@@ -11,6 +12,28 @@ import type {
   BonusRecurring,
   KidRecord,
 } from '../../lib/types'
+
+/** Normalize a days-of-week array: unique, sorted, only 0..6. */
+function normalizeDows(v: unknown): number[] {
+  if (!Array.isArray(v)) return []
+  const set = new Set<number>()
+  for (const x of v) {
+    const n = Number(x)
+    if (Number.isInteger(n) && n >= 0 && n <= 6) set.add(n)
+  }
+  return [...set].sort((a, b) => a - b)
+}
+
+/** Empty array = every day; otherwise short list ("Sat", "Sat + Sun", "Weekdays"). */
+function describeDows(dows: number[]): string {
+  if (dows.length === 0 || dows.length === 7) return 'Every day'
+  const set = new Set(dows)
+  const isWeekdays = [1, 2, 3, 4, 5].every((d) => set.has(d)) && !set.has(0) && !set.has(6)
+  const isWeekends = set.has(0) && set.has(6) && dows.length === 2
+  if (isWeekdays) return 'Weekdays'
+  if (isWeekends) return 'Weekends'
+  return dows.map((d) => DOW_SHORT[d]).join(', ')
+}
 
 export default function ManageBonusChores() {
   const { data: chores, loading } = useAllBonusChores()
@@ -23,6 +46,7 @@ export default function ManageBonusChores() {
   const [assigned, setAssigned] = useState<BonusAssigned>('all')
   const [recurring, setRecurring] = useState<BonusRecurring>('anytime')
   const [maxPerDay, setMaxPerDay] = useState('0')
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>([])
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
@@ -41,6 +65,7 @@ export default function ManageBonusChores() {
         assignedTo: assigned,
         recurring,
         maxPerDay: parsedMax,
+        daysOfWeek: normalizeDows(daysOfWeek),
         active: true,
       })
       setTitle('')
@@ -48,6 +73,7 @@ export default function ManageBonusChores() {
       setAssigned('all')
       setRecurring('anytime')
       setMaxPerDay('0')
+      setDaysOfWeek([])
     } catch (e: any) {
       setErr(e?.message || 'Failed to add chore')
     } finally {
@@ -136,6 +162,14 @@ export default function ManageBonusChores() {
           </div>
         </div>
         <div>
+          <label className="block text-xs text-slate-400 mb-1">Available on</label>
+          <DaysOfWeekPicker value={daysOfWeek} onChange={setDaysOfWeek} />
+          <div className="text-xs text-slate-500 mt-1">
+            Leave "Every day" for a chore that's always available. Pick specific days for
+            weekend-only, "vacuum on Wednesday", or a Saturday-only lawn mow.
+          </div>
+        </div>
+        <div>
           <label className="block text-xs text-slate-400 mb-1">Who can do it?</label>
           <AssignPicker kids={kids} value={assigned} onChange={setAssigned} />
         </div>
@@ -151,46 +185,52 @@ export default function ManageBonusChores() {
         <div className="card text-slate-400 text-center">No bonus chores yet.</div>
       ) : (
         <ul className="space-y-2">
-          {chores.map((c) => (
-            <li key={c.id} className={`card ${!c.active ? 'opacity-60' : ''}`}>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 sm:flex-1">
-                  <div className="font-medium break-words">{c.title}</div>
-                  <div className="text-xs text-slate-400 mt-1">
-                    🪙 {c.coinValue} · {c.recurring}
-                    {c.maxPerDay && c.maxPerDay > 0 ? ` · max ${c.maxPerDay}/day` : ''} ·{' '}
-                    {c.assignedTo === 'all'
-                      ? 'Everyone'
-                      : (c.assignedTo as string[])
-                          .map((id) => kidNameById[id] ?? '?')
-                          .join(', ') || 'No one'}
+          {chores.map((c) => {
+            const dows = normalizeDows(c.daysOfWeek)
+            return (
+              <li key={c.id} className={`card ${!c.active ? 'opacity-60' : ''}`}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 sm:flex-1">
+                    <div className="font-medium break-words">{c.title}</div>
+                    <div className="text-xs text-slate-400 mt-1">
+                      🪙 {c.coinValue} · {c.recurring}
+                      {c.maxPerDay && c.maxPerDay > 0 ? ` · max ${c.maxPerDay}/day` : ''} ·{' '}
+                      {c.assignedTo === 'all'
+                        ? 'Everyone'
+                        : (c.assignedTo as string[])
+                            .map((id) => kidNameById[id] ?? '?')
+                            .join(', ') || 'No one'}
+                      {dows.length > 0 && dows.length < 7 && (
+                        <> · 📅 {describeDows(dows)}</>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 justify-end sm:justify-start shrink-0">
+                    <button
+                      className="btn-ghost !px-3 !py-2 text-sm"
+                      onClick={() => setEditing(c)}
+                    >
+                      ✎ Edit
+                    </button>
+                    <button
+                      className="btn-ghost !px-3 !py-2 text-sm"
+                      onClick={() => toggleActive(c)}
+                    >
+                      {c.active ? 'Pause' : 'Resume'}
+                    </button>
+                    <button
+                      className="btn-ghost !px-3 !py-2 text-sm text-red-400"
+                      aria-label="Delete"
+                      title="Delete"
+                      onClick={() => remove(c.id)}
+                    >
+                      🗑
+                    </button>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-1 justify-end sm:justify-start shrink-0">
-                  <button
-                    className="btn-ghost !px-3 !py-2 text-sm"
-                    onClick={() => setEditing(c)}
-                  >
-                    ✎ Edit
-                  </button>
-                  <button
-                    className="btn-ghost !px-3 !py-2 text-sm"
-                    onClick={() => toggleActive(c)}
-                  >
-                    {c.active ? 'Pause' : 'Resume'}
-                  </button>
-                  <button
-                    className="btn-ghost !px-3 !py-2 text-sm text-red-400"
-                    aria-label="Delete"
-                    title="Delete"
-                    onClick={() => remove(c.id)}
-                  >
-                    🗑
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       )}
 
@@ -211,9 +251,10 @@ export default function ManageBonusChores() {
 /**
  * Full-field edit form for a bonus chore. Rendered inside the Modal from
  * the parent Manage page. Every field the create form has is editable
- * here — title, coin value, frequency, per-day cap, and who can do it.
- * Local state seeds from the record on mount; Save calls updateBonusChore
- * with the full field set and then closes the modal via onSaved().
+ * here — title, coin value, frequency, per-day cap, day-of-week
+ * restriction, and who can do it. Local state seeds from the record on
+ * mount; Save calls updateBonusChore with the full field set and then
+ * closes the modal via onSaved().
  */
 function EditBonusChoreForm({
   chore,
@@ -231,6 +272,7 @@ function EditBonusChoreForm({
   const [assigned, setAssigned] = useState<BonusAssigned>(chore.assignedTo)
   const [recurring, setRecurring] = useState<BonusRecurring>(chore.recurring)
   const [maxPerDay, setMaxPerDay] = useState(String(chore.maxPerDay ?? 0))
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>(normalizeDows(chore.daysOfWeek))
   const [active, setActive] = useState<boolean>(chore.active !== false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -244,6 +286,7 @@ function EditBonusChoreForm({
     setAssigned(chore.assignedTo)
     setRecurring(chore.recurring)
     setMaxPerDay(String(chore.maxPerDay ?? 0))
+    setDaysOfWeek(normalizeDows(chore.daysOfWeek))
     setActive(chore.active !== false)
   }, [chore])
 
@@ -260,6 +303,7 @@ function EditBonusChoreForm({
       assignedTo: assigned,
       recurring,
       maxPerDay: Math.max(0, Math.floor(Number(maxPerDay)) || 0),
+      daysOfWeek: normalizeDows(daysOfWeek),
       active,
     }
     setBusy(true)
@@ -332,6 +376,10 @@ function EditBonusChoreForm({
         />
       </div>
       <div>
+        <label className="block text-xs text-slate-400 mb-1">Available on</label>
+        <DaysOfWeekPicker value={daysOfWeek} onChange={setDaysOfWeek} />
+      </div>
+      <div>
         <label className="block text-xs text-slate-400 mb-1">Who can do it?</label>
         <AssignPicker kids={kids} value={assigned} onChange={setAssigned} />
       </div>
@@ -361,6 +409,85 @@ function EditBonusChoreForm({
         </button>
       </div>
     </form>
+  )
+}
+
+/**
+ * Day-of-week picker. Empty array = "Every day" (the common case). Also
+ * offers Weekdays / Weekends preset shortcuts that just set the array
+ * for you — the granular per-day pills stay visible so you can tweak
+ * from a preset.
+ */
+function DaysOfWeekPicker({
+  value,
+  onChange,
+}: {
+  value: number[]
+  onChange: (v: number[]) => void
+}) {
+  const set = new Set(value)
+  const isEveryDay = value.length === 0 || value.length === 7
+  const isWeekdays =
+    !set.has(0) && !set.has(6) && [1, 2, 3, 4, 5].every((d) => set.has(d)) && value.length === 5
+  const isWeekends = set.has(0) && set.has(6) && value.length === 2
+  const toggle = (d: number) => {
+    const next = new Set(value)
+    if (next.has(d)) next.delete(d)
+    else next.add(d)
+    // If the user just re-selected all 7 days, collapse back to "every day"
+    // (empty array). If they cleared everything, also collapse — an empty
+    // list defaults to every day rather than "chore can never run".
+    if (next.size === 0 || next.size === 7) onChange([])
+    else onChange([...next].sort((a, b) => a - b))
+  }
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={`pill ${isEveryDay ? 'bg-brand-600 text-white' : ''}`}
+          onClick={() => onChange([])}
+        >
+          Every day
+        </button>
+        <button
+          type="button"
+          className={`pill ${isWeekdays ? 'bg-brand-600 text-white' : ''}`}
+          onClick={() => onChange([1, 2, 3, 4, 5])}
+        >
+          Weekdays
+        </button>
+        <button
+          type="button"
+          className={`pill ${isWeekends ? 'bg-brand-600 text-white' : ''}`}
+          onClick={() => onChange([0, 6])}
+        >
+          Weekends
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {DOW_SHORT.map((label, d) => {
+          const active = isEveryDay || set.has(d)
+          return (
+            <button
+              key={d}
+              type="button"
+              className={`pill text-xs !px-3 ${
+                active ? 'bg-brand-600 text-white' : ''
+              } ${isEveryDay ? 'opacity-70' : ''}`}
+              onClick={() => toggle(d)}
+              title={
+                isEveryDay
+                  ? 'Currently every day — tap a day to narrow it down'
+                  : `Toggle ${label}`
+              }
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 

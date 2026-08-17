@@ -351,6 +351,31 @@ routerAdd('POST', '/api/custom/approve', (c) => {
       )
       const value = chore ? chore.getInt('coinValue') : comp.getInt('coinValue')
 
+      // Enforce day-of-week restriction if the chore has one. daysOfWeek is
+      // stored as JSON — empty/missing/all-7 = "every day" (backward compat).
+      // Otherwise the completion's forDate must fall on an allowed weekday.
+      // Parses as noon-UTC so DST edges never shift the answer by a day.
+      if (chore) {
+        let dows = []
+        try {
+          const raw = chore.get('daysOfWeek')
+          if (Array.isArray(raw)) dows = raw
+          else if (typeof raw === 'string' && raw.length > 0) dows = JSON.parse(raw)
+        } catch (_e) {
+          dows = []
+        }
+        if (Array.isArray(dows) && dows.length > 0 && dows.length < 7) {
+          const day = comp.getString('forDate') || localDate()
+          const [yy, mm, dd] = day.split('-').map((x) => parseInt(x, 10))
+          const dow = new Date(Date.UTC(yy, mm - 1, dd, 12)).getUTCDay()
+          if (!dows.map(Number).includes(dow)) {
+            throw new BadRequestError(
+              `"${comp.getString('choreTitle')}" isn't available on ${day}.`,
+            )
+          }
+        }
+      }
+
       // Enforce per-day cap (if the chore has one). Cap counts approved
       // completions for the same (kidId, choreId) on the same forDate (local
       // day the kid submitted for). Pending completions don't count — only
