@@ -835,7 +835,10 @@ routerAdd('POST', '/api/custom/create-goal', (c) => {
     category: '',
     ownerKidId: '',
     coinTarget: 0,
-    matchRate: 0,
+    // Use a fractional default so DynamicModel binds this as float64 in
+    // Go — an integer default (0) would infer int64 and reject decimals
+    // like 0.25 from the request body.
+    matchRate: 0.0001,
     visibility: '',
     approvalRequired: false,
   })
@@ -848,7 +851,11 @@ routerAdd('POST', '/api/custom/create-goal', (c) => {
   if (!['owner_only', 'family', 'private'].includes(visibility)) {
     throw new BadRequestError('visibility must be owner_only, family, or private.')
   }
-  const matchRate = Math.max(0, Number(body.matchRate) || 0)
+  // Guard against the DynamicModel 0.0001 sentinel leaking through when
+  // the caller doesn't send matchRate at all — anything below 0.001 is
+  // rounded to 0 (no realistic parent match is that small).
+  const rawMatch = Number(body.matchRate) || 0
+  const matchRate = rawMatch < 0.001 ? 0 : rawMatch
 
   let goalId = ''
   $app.dao().runInTransaction((txDao) => {
@@ -887,7 +894,10 @@ routerAdd('POST', '/api/custom/update-goal', (c) => {
     category: '',
     ownerKidId: '',
     coinTarget: 0,
-    matchRate: -1,
+    // Fractional default so DynamicModel binds as float64 (see create-goal
+    // for the same rationale). The -1 sentinel here means "not sent";
+    // the code below only writes matchRate when the value is >= 0.
+    matchRate: -1.0001,
     visibility: '',
     approvalRequired: false,
   })
