@@ -20,9 +20,16 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TabBarLayout, PageHeader } from '../../components/Layout'
 import { PARENT_TABS } from './ParentDashboard'
+import { useAuth } from '../../auth/AuthContext'
 import { pb, callCustom, LOCAL_TZ } from '../../pb'
-import { useDashboards } from '../../hooks/data'
-import { createDashboard, deleteDashboard, resetDashboardPin } from '../../lib/actions'
+import { useDashboards, useParents } from '../../hooks/data'
+import {
+  changeMyPassword,
+  createDashboard,
+  deleteDashboard,
+  resetDashboardPin,
+  resetParentPassword,
+} from '../../lib/actions'
 
 const FEEDBACK_EMAIL = 'daniel@turnersystems.com'
 
@@ -255,6 +262,9 @@ export default function Settings() {
 
       {/* ---- Dashboards panel ----------------------------------------- */}
       <DashboardsPanel />
+
+      {/* ---- Account / password panel --------------------------------- */}
+      <AccountPanel />
 
       {/* ---- Feedback panel ------------------------------------------- */}
       <section className="card mt-6 space-y-4">
@@ -556,6 +566,211 @@ function DashboardsPanel() {
           </button>
         </div>
       )}
+    </section>
+  )
+}
+
+/**
+ * Account panel — parent password management.
+ *
+ * Two use cases:
+ *   1. "Change my password" — for the signed-in parent who knows their
+ *      current password and just wants to rotate it. Uses PB's built-in
+ *      users.update with oldPassword, which re-issues a token — we then
+ *      re-authenticate with the new password so the session stays alive.
+ *   2. "Reset another parent's password" — for the "mom got locked out,
+ *      dad resets it from his phone" flow. Only shown to parents about
+ *      OTHER parents on this install; the caller's own row uses the
+ *      change-with-old-password form above. Goes through the
+ *      /reset-parent-password hook which doesn't need the old password.
+ */
+function AccountPanel() {
+  const { user, signOutUser } = useAuth()
+  const { data: parents, loading } = useParents()
+
+  const [oldPassword, setOldPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [newPassword2, setNewPassword2] = useState('')
+  const [changing, setChanging] = useState(false)
+  const [changeErr, setChangeErr] = useState<string | null>(null)
+  const [changeMsg, setChangeMsg] = useState<string | null>(null)
+
+  const [rowBusyId, setRowBusyId] = useState<string | null>(null)
+  const [rowErr, setRowErr] = useState<string | null>(null)
+  const [rowMsg, setRowMsg] = useState<string | null>(null)
+
+  const changePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setChangeErr(null)
+    setChangeMsg(null)
+    if (newPassword !== newPassword2) {
+      setChangeErr("New passwords don't match.")
+      return
+    }
+    if (newPassword.length < 8) {
+      setChangeErr('New password must be at least 8 characters.')
+      return
+    }
+    setChanging(true)
+    try {
+      await changeMyPassword(oldPassword, newPassword)
+      setOldPassword('')
+      setNewPassword('')
+      setNewPassword2('')
+      setChangeMsg('Password changed. Your session is still active.')
+    } catch (e: any) {
+      // PB returns 400 with a data blob on wrong-old-password; surface a nice hint.
+      const raw = e?.message || 'Password change failed.'
+      setChangeErr(
+        raw.toLowerCase().includes('validation')
+          ? 'Check that your current password is right and the new one is at least 8 characters.'
+          : raw,
+      )
+    } finally {
+      setChanging(false)
+    }
+  }
+
+  const doResetOtherParent = async (userId: string, name: string) => {
+    const newPw = window.prompt(
+      `Set a new password for "${name}" (8+ characters).\n\n` +
+        'They can sign in with this password immediately and change it themselves ' +
+        'from Settings.',
+    )
+    if (newPw === null) return
+    if (newPw.length < 8) {
+      alert('Password must be at least 8 characters.')
+      return
+    }
+    setRowBusyId(userId)
+    setRowErr(null)
+    setRowMsg(null)
+    try {
+      await resetParentPassword(userId, newPw)
+      setRowMsg(`Password reset for ${name}. Share it with them privately.`)
+    } catch (e: any) {
+      setRowErr(e?.message || 'Reset failed.')
+    } finally {
+      setRowBusyId(null)
+    }
+  }
+
+  const others = parents.filter((p) => p.id !== user?.id)
+
+  return (
+    <section className="card mt-6 space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">Your account</h2>
+        <p className="text-xs text-slate-400 mt-1">
+          Change your own password, or reset another parent's password if
+          they got locked out. Kid PINs are managed on each kid's page
+          (Kids → open a kid → Reset PIN).
+        </p>
+      </div>
+
+      {/* ---- Change my password ------------------------------------- */}
+      <form onSubmit={changePassword} className="space-y-3">
+        <div className="text-sm font-medium text-slate-200">Change my password</div>
+        <div className="text-xs text-slate-500">
+          Signed in as{' '}
+          <code className="text-slate-300">{(user as any)?.email || user?.displayName}</code>.
+        </div>
+        <input
+          className="input"
+          type="password"
+          autoComplete="current-password"
+          placeholder="Current password"
+          value={oldPassword}
+          onChange={(e) => setOldPassword(e.target.value)}
+          required
+        />
+        <input
+          className="input"
+          type="password"
+          autoComplete="new-password"
+          placeholder="New password (8+ characters)"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          minLength={8}
+          required
+        />
+        <input
+          className="input"
+          type="password"
+          autoComplete="new-password"
+          placeholder="Confirm new password"
+          value={newPassword2}
+          onChange={(e) => setNewPassword2(e.target.value)}
+          minLength={8}
+          required
+        />
+        {changeErr && <div className="text-sm text-red-400">{changeErr}</div>}
+        {changeMsg && <div className="text-sm text-emerald-400">{changeMsg}</div>}
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="btn-primary"
+            type="submit"
+            disabled={
+              changing ||
+              !oldPassword ||
+              !newPassword ||
+              newPassword !== newPassword2 ||
+              newPassword.length < 8
+            }
+          >
+            {changing ? 'Changing…' : 'Change my password'}
+          </button>
+          <button type="button" className="btn-ghost text-sm" onClick={signOutUser}>
+            Sign out
+          </button>
+        </div>
+      </form>
+
+      {/* ---- Reset another parent's password ------------------------ */}
+      <div className="pt-4 border-t border-slate-800 space-y-3">
+        <div className="text-sm font-medium text-slate-200">Other parents on this install</div>
+        <p className="text-xs text-slate-500">
+          For "mom forgot her password → dad resets it." The other parent
+          can sign in with the new password right away and change it
+          themselves.
+        </p>
+        {loading ? (
+          <div className="text-xs text-slate-500">Loading…</div>
+        ) : others.length === 0 ? (
+          <div className="text-xs text-slate-500">
+            You're the only parent on this install. If you lock yourself out,
+            you'll need to reset your password from the PocketBase admin UI
+            at <code className="text-slate-400">/_/</code> on your home server.
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {others.map((p) => (
+              <li
+                key={p.id}
+                className="rounded-xl bg-slate-950 border border-slate-800 p-3 flex items-center gap-3"
+              >
+                <span className="text-2xl">{p.avatarEmoji || '👤'}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{p.displayName || 'Parent'}</div>
+                  <div className="text-xs text-slate-500 truncate">
+                    <code className="text-slate-300">{(p as any).email || '—'}</code>
+                  </div>
+                </div>
+                <button
+                  className="btn-ghost text-sm"
+                  disabled={rowBusyId === p.id}
+                  onClick={() => doResetOtherParent(p.id, p.displayName || 'Parent')}
+                  title="Set a new password for this parent"
+                >
+                  {rowBusyId === p.id ? 'Resetting…' : '🔑 Reset password'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {rowErr && <div className="text-sm text-red-400">{rowErr}</div>}
+        {rowMsg && <div className="text-sm text-emerald-400">{rowMsg}</div>}
+      </div>
     </section>
   )
 }

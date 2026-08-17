@@ -234,6 +234,41 @@ export function resetDashboardPin(userId: string, pin: string) {
   return callCustom('reset-dashboard-pin', { userId, pin })
 }
 
+// ---- Parent account password management ---------------------------------
+
+/**
+ * Change the currently-signed-in user's password. PB's built-in update
+ * requires the old password — no hook needed. After success the auth token
+ * is invalidated server-side, so we refresh the session with the new
+ * password so the caller stays signed in.
+ */
+export async function changeMyPassword(oldPassword: string, newPassword: string) {
+  const me = pb.authStore.model
+  if (!me) throw new Error('Not signed in.')
+  if (newPassword.length < 8) throw new Error('New password must be at least 8 characters.')
+  await pb.collection('users').update(me.id, {
+    oldPassword,
+    password: newPassword,
+    passwordConfirm: newPassword,
+  })
+  // PB revokes the old token when the password changes; re-authenticate so
+  // the user isn't kicked to the login screen mid-session.
+  const email = (me as any).email as string | undefined
+  if (email) {
+    await pb.collection('users').authWithPassword(email, newPassword)
+  }
+}
+
+/**
+ * Reset another parent's password. Caller must be a parent; target must be
+ * a parent. For the "mom forgot her password → dad resets it from his
+ * phone" flow. Goes through the /reset-parent-password hook which does not
+ * require the old password.
+ */
+export function resetParentPassword(userId: string, newPassword: string) {
+  return callCustom('reset-parent-password', { userId, password: newPassword })
+}
+
 // ---- Savings goals (parent + kid) ---------------------------------------
 
 /**

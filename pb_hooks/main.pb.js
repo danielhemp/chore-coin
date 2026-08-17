@@ -839,6 +839,34 @@ routerAdd('POST', '/api/custom/reset-dashboard-pin', (c) => {
   return c.json(200, { ok: true })
 })
 
+// POST /api/custom/reset-parent-password  { userId, password }
+// Lets a parent set another parent's password without knowing the old one —
+// the "another parent unlocks a locked-out parent" flow. The caller must be
+// a parent (requireParent). The target must also be a parent — a parent
+// can't use this to change a kid's password (setKidLogin handles that) or a
+// dashboard PIN (resetDashboardPin handles that). A parent CAN reset their
+// own password through here, but they should use the "change my password"
+// flow instead — that goes through PB's built-in oldPassword check.
+routerAdd('POST', '/api/custom/reset-parent-password', (c) => {
+  const { requireParent, requireBody } = require(`${__hooks}/lib.js`)
+  requireParent(c)
+  const body = requireBody(c, { userId: '', password: '' })
+  if (!body.userId) throw new BadRequestError('userId required.')
+  if (String(body.password || '').length < 8) {
+    throw new BadRequestError('Password must be at least 8 characters.')
+  }
+
+  $app.dao().runInTransaction((txDao) => {
+    const rec = txDao.findRecordById('users', body.userId)
+    if (rec.getString('role') !== 'parent') {
+      throw new BadRequestError('Not a parent account. Use the kid or dashboard flow instead.')
+    }
+    rec.setPassword(body.password)
+    txDao.saveRecord(rec)
+  })
+  return c.json(200, { ok: true })
+})
+
 // -----------------------------------------------------------------------------
 // Savings goals — kids (or the whole family) put coins toward a target, parent
 // approves the cash-out when the target is reached. See migration

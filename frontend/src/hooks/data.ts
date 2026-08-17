@@ -380,6 +380,15 @@ export function useDashboards() {
   })
 }
 
+/** All parent accounts on this install — used in Settings to reset each other's passwords. */
+export function useParents() {
+  return useLive<UserRecord>('users', {
+    filter: 'role = "parent"',
+    sortBy: byName,
+    matches: (r) => r.role === 'parent',
+  })
+}
+
 // ---- goals + contributions ---------------------------------------------
 
 /** All active + reached goals (parents/dashboard see everything; kids see per collection rules). */
