@@ -476,7 +476,7 @@ function GoalForm({
         <input
           className="input mt-2"
           type="number"
-          step="0.1"
+          step="any"
           min={0}
           value={matchRate}
           onChange={(e) => setMatchRate(e.target.value)}
