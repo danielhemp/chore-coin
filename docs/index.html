@@ -96,6 +96,30 @@
     background: rgba(99,102,241,0.15); color: #a5b4fc;
     border: 1px solid rgba(99,102,241,0.3);
   }
+
+  /* Tab bar for the "See it in action" section. Vanilla JS toggles .active. */
+  .tab-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 16px; border-radius: 12px;
+    font-size: 13px; font-weight: 500;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgb(30, 41, 59);
+    color: rgb(148, 163, 184);
+    cursor: pointer; transition: all .15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { background: rgb(30, 41, 59); color: rgb(226, 232, 240); }
+  .tab-btn.active {
+    background: rgb(79, 70, 229); border-color: rgb(99, 102, 241);
+    color: white;
+    box-shadow: 0 8px 20px -8px rgba(99, 102, 241, 0.6);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: tabFade .25s ease-out; }
+  @keyframes tabFade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 </style>
 </head>
 <body class="grad-bg min-h-screen">
@@ -240,227 +264,346 @@
   <div class="text-center max-w-2xl mx-auto">
     <h2 class="text-3xl sm:text-4xl font-bold">See it in action</h2>
     <p class="mt-4 text-slate-400">
-      Three screens your family will actually use. Everything updates in
-      real time across every phone and tablet in the house.
+      Every screen your family will actually use. Tap a tab to jump around.
+      Everything you see updates in real time across every phone and tablet
+      in the house.
     </p>
   </div>
 
-  <!-- Screen 1: Parent approvals (phone) -->
-  <div class="mt-16 grid md:grid-cols-2 gap-12 items-center">
-    <div class="flex justify-center order-2 md:order-1">
-      <div class="phone" aria-hidden="true">
-        <div class="phone-screen">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-sm font-semibold">Approvals</div>
-              <div class="text-[10px] text-slate-500">3 waiting for you</div>
-            </div>
-            <div class="w-8 h-8 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-sm">👩</div>
-          </div>
-
-          <div class="space-y-2 mt-2">
-            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
-              <div class="flex items-start gap-2">
-                <div class="text-xl">👦</div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-sm text-slate-200"><span class="font-medium">Alex</span> finished a chore</div>
-                  <div class="text-xs text-slate-400 mt-0.5">"Make your bed"</div>
-                </div>
-              </div>
-              <div class="flex gap-1.5 mt-2.5">
-                <button class="flex-1 bg-emerald-600 rounded-md py-1.5 text-xs font-medium">✓ Approve</button>
-                <button class="flex-1 bg-slate-800 border border-slate-700 rounded-md py-1.5 text-xs">Reject</button>
-              </div>
-            </div>
-
-            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
-              <div class="flex items-start gap-2">
-                <div class="text-xl">👧</div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-sm text-slate-200"><span class="font-medium">Sam</span> did a bonus chore</div>
-                  <div class="text-xs text-slate-400 mt-0.5">"Empty the dishwasher"</div>
-                  <div class="text-[10px] text-amber-300 mt-0.5">+ 3 🪙 if approved</div>
-                </div>
-              </div>
-              <div class="flex gap-1.5 mt-2.5">
-                <button class="flex-1 bg-emerald-600 rounded-md py-1.5 text-xs font-medium">✓ Approve</button>
-                <button class="flex-1 bg-slate-800 border border-slate-700 rounded-md py-1.5 text-xs">Reject</button>
-              </div>
-            </div>
-
-            <div class="bg-brand-950/60 border border-brand-800/60 rounded-xl p-3">
-              <div class="flex items-start gap-2">
-                <div class="text-xl">🎁</div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-sm text-slate-200"><span class="font-medium">Alex</span> wants a reward</div>
-                  <div class="text-xs text-slate-400 mt-0.5">"Movie night"</div>
-                  <div class="text-[10px] text-amber-300 mt-0.5">− 10 🪙 from balance</div>
-                </div>
-              </div>
-              <div class="flex gap-1.5 mt-2.5">
-                <button class="flex-1 bg-emerald-600 rounded-md py-1.5 text-xs font-medium">✓ Approve</button>
-                <button class="flex-1 bg-slate-800 border border-slate-700 rounded-md py-1.5 text-xs">Deny</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="order-1 md:order-2">
-      <div class="chip">👨‍👩‍👧 Parent view</div>
-      <h3 class="mt-4 text-2xl sm:text-3xl font-bold">One inbox for everything your kids ask for.</h3>
-      <p class="mt-4 text-slate-300">
-        Every finished chore, every bonus chore, and every reward request
-        lands in the same place. Approve or reject in one tap. Coins credit
-        or screen time unlocks the moment you tap approve — on your kids'
-        phones, on the kitchen tablet, everywhere.
-      </p>
-      <p class="mt-4 text-slate-400 text-sm">
-        Get a notification the second they tap "I did it." Handle it while
-        you're waiting in line at pickup. Or leave it for after dinner. Your
-        rules.
-      </p>
-    </div>
+  <!-- Tab bar -->
+  <div class="mt-10 flex flex-wrap justify-center gap-2">
+    <button class="tab-btn active" data-tab="approvals" type="button">✅ Parent approvals</button>
+    <button class="tab-btn" data-tab="rewards" type="button">🎁 Rewards menu</button>
+    <button class="tab-btn" data-tab="goals" type="button">💰 Savings goals</button>
+    <button class="tab-btn" data-tab="dashboard" type="button">📺 Family dashboard</button>
   </div>
 
-  <!-- Screen 2: Reward catalog -->
-  <div class="mt-24 grid md:grid-cols-2 gap-12 items-center">
-    <div>
-      <div class="chip">🎁 You define the rewards</div>
-      <h3 class="mt-4 text-2xl sm:text-3xl font-bold">Your family, your reward menu.</h3>
-      <p class="mt-4 text-slate-300">
-        Set up rewards that mean something in your house. "Movie night."
-        "Pick dinner." "Stay up 30 minutes late." Give each one a coin
-        price. Kids can request from the menu when they've saved enough.
-      </p>
-      <p class="mt-4 text-slate-400 text-sm">
-        No more "can I have…?" ten times a day. If it's on the menu and
-        they have the coins, they can ask. If it's not, it's not up for
-        debate.
-      </p>
-    </div>
-    <div class="flex justify-center">
-      <div class="phone" aria-hidden="true">
-        <div class="phone-screen">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-sm font-semibold">Reward menu</div>
-              <div class="text-[10px] text-slate-500">5 rewards set up</div>
-            </div>
-            <button class="text-xs bg-brand-600 rounded-md px-2 py-1">+ Add</button>
-          </div>
+  <div class="mt-10">
 
-          <div class="space-y-2 mt-2">
-            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
-              <div class="text-2xl">🎬</div>
-              <div class="flex-1">
-                <div class="text-sm font-medium text-slate-200">Movie night</div>
-                <div class="text-[11px] text-slate-500">You pick the movie</div>
+    <!-- PANEL: Parent approvals -->
+    <div class="tab-panel active" data-panel="approvals">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="flex justify-center order-2 md:order-1">
+          <div class="phone" aria-hidden="true">
+            <div class="phone-screen">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-sm font-semibold">Approvals</div>
+                  <div class="text-[10px] text-slate-500">3 waiting for you</div>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-sm">👩</div>
               </div>
-              <div class="text-sm font-semibold text-amber-300">10 🪙</div>
+
+              <div class="space-y-2 mt-2">
+                <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+                  <div class="flex items-start gap-2">
+                    <div class="text-xl">👦</div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm text-slate-200"><span class="font-medium">Alex</span> finished a chore</div>
+                      <div class="text-xs text-slate-400 mt-0.5">"Make your bed"</div>
+                    </div>
+                  </div>
+                  <div class="flex gap-1.5 mt-2.5">
+                    <button class="flex-1 bg-emerald-600 rounded-md py-1.5 text-xs font-medium">✓ Approve</button>
+                    <button class="flex-1 bg-slate-800 border border-slate-700 rounded-md py-1.5 text-xs">Reject</button>
+                  </div>
+                </div>
+
+                <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+                  <div class="flex items-start gap-2">
+                    <div class="text-xl">👧</div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm text-slate-200"><span class="font-medium">Sam</span> did a bonus chore</div>
+                      <div class="text-xs text-slate-400 mt-0.5">"Empty the dishwasher"</div>
+                      <div class="text-[10px] text-amber-300 mt-0.5">+ 3 🪙 if approved</div>
+                    </div>
+                  </div>
+                  <div class="flex gap-1.5 mt-2.5">
+                    <button class="flex-1 bg-emerald-600 rounded-md py-1.5 text-xs font-medium">✓ Approve</button>
+                    <button class="flex-1 bg-slate-800 border border-slate-700 rounded-md py-1.5 text-xs">Reject</button>
+                  </div>
+                </div>
+
+                <div class="bg-brand-950/60 border border-brand-800/60 rounded-xl p-3">
+                  <div class="flex items-start gap-2">
+                    <div class="text-xl">🎁</div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm text-slate-200"><span class="font-medium">Alex</span> wants a reward</div>
+                      <div class="text-xs text-slate-400 mt-0.5">"Movie night"</div>
+                      <div class="text-[10px] text-amber-300 mt-0.5">− 10 🪙 from balance</div>
+                    </div>
+                  </div>
+                  <div class="flex gap-1.5 mt-2.5">
+                    <button class="flex-1 bg-emerald-600 rounded-md py-1.5 text-xs font-medium">✓ Approve</button>
+                    <button class="flex-1 bg-slate-800 border border-slate-700 rounded-md py-1.5 text-xs">Deny</button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
-              <div class="text-2xl">🍕</div>
-              <div class="flex-1">
-                <div class="text-sm font-medium text-slate-200">Pick dinner</div>
-                <div class="text-[11px] text-slate-500">Anything under $25</div>
+          </div>
+        </div>
+        <div class="order-1 md:order-2">
+          <div class="chip">👨‍👩‍👧 Parent view</div>
+          <h3 class="mt-4 text-2xl sm:text-3xl font-bold">One inbox for everything your kids ask for.</h3>
+          <p class="mt-4 text-slate-300">
+            Every finished chore, every bonus chore, and every reward request
+            lands in the same place. Approve or reject in one tap. Coins credit
+            or screen time unlocks the moment you tap approve — on your kids'
+            phones, on the kitchen tablet, everywhere.
+          </p>
+          <p class="mt-4 text-slate-400 text-sm">
+            Get a notification the second they tap "I did it." Handle it while
+            you're waiting in line at pickup. Or leave it for after dinner. Your
+            rules.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: Rewards menu -->
+    <div class="tab-panel" data-panel="rewards">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div>
+          <div class="chip">🎁 You define the rewards</div>
+          <h3 class="mt-4 text-2xl sm:text-3xl font-bold">Your family, your reward menu.</h3>
+          <p class="mt-4 text-slate-300">
+            Set up rewards that mean something in your house. "Movie night."
+            "Pick dinner." "Stay up 30 minutes late." Give each one a coin
+            price. Kids can request from the menu when they've saved enough.
+          </p>
+          <p class="mt-4 text-slate-400 text-sm">
+            No more "can I have…?" ten times a day. If it's on the menu and
+            they have the coins, they can ask. If it's not, it's not up for
+            debate.
+          </p>
+        </div>
+        <div class="flex justify-center">
+          <div class="phone" aria-hidden="true">
+            <div class="phone-screen">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-sm font-semibold">Reward menu</div>
+                  <div class="text-[10px] text-slate-500">5 rewards set up</div>
+                </div>
+                <button class="text-xs bg-brand-600 rounded-md px-2 py-1">+ Add</button>
               </div>
-              <div class="text-sm font-semibold text-amber-300">15 🪙</div>
-            </div>
-            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
-              <div class="text-2xl">🌙</div>
-              <div class="flex-1">
-                <div class="text-sm font-medium text-slate-200">Stay up 30 min late</div>
-                <div class="text-[11px] text-slate-500">School nights only</div>
+
+              <div class="space-y-2 mt-2">
+                <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+                  <div class="text-2xl">🎬</div>
+                  <div class="flex-1">
+                    <div class="text-sm font-medium text-slate-200">Movie night</div>
+                    <div class="text-[11px] text-slate-500">You pick the movie</div>
+                  </div>
+                  <div class="text-sm font-semibold text-amber-300">10 🪙</div>
+                </div>
+                <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+                  <div class="text-2xl">🍕</div>
+                  <div class="flex-1">
+                    <div class="text-sm font-medium text-slate-200">Pick dinner</div>
+                    <div class="text-[11px] text-slate-500">Anything under $25</div>
+                  </div>
+                  <div class="text-sm font-semibold text-amber-300">15 🪙</div>
+                </div>
+                <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+                  <div class="text-2xl">🌙</div>
+                  <div class="flex-1">
+                    <div class="text-sm font-medium text-slate-200">Stay up 30 min late</div>
+                    <div class="text-[11px] text-slate-500">School nights only</div>
+                  </div>
+                  <div class="text-sm font-semibold text-amber-300">12 🪙</div>
+                </div>
+                <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+                  <div class="text-2xl">📚</div>
+                  <div class="flex-1">
+                    <div class="text-sm font-medium text-slate-200">New book</div>
+                    <div class="text-[11px] text-slate-500">Up to $15</div>
+                  </div>
+                  <div class="text-sm font-semibold text-amber-300">25 🪙</div>
+                </div>
+                <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+                  <div class="text-2xl">🎮</div>
+                  <div class="flex-1">
+                    <div class="text-sm font-medium text-slate-200">Extra screen hour</div>
+                    <div class="text-[11px] text-slate-500">Weekends only</div>
+                  </div>
+                  <div class="text-sm font-semibold text-amber-300">20 🪙</div>
+                </div>
               </div>
-              <div class="text-sm font-semibold text-amber-300">12 🪙</div>
-            </div>
-            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
-              <div class="text-2xl">📚</div>
-              <div class="flex-1">
-                <div class="text-sm font-medium text-slate-200">New book</div>
-                <div class="text-[11px] text-slate-500">Up to $15</div>
-              </div>
-              <div class="text-sm font-semibold text-amber-300">25 🪙</div>
-            </div>
-            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
-              <div class="text-2xl">🎮</div>
-              <div class="flex-1">
-                <div class="text-sm font-medium text-slate-200">Extra screen hour</div>
-                <div class="text-[11px] text-slate-500">Weekends only</div>
-              </div>
-              <div class="text-sm font-semibold text-amber-300">20 🪙</div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Screen 3: Family wall dashboard on tablet -->
-  <div class="mt-24">
-    <div class="text-center max-w-2xl mx-auto">
-      <div class="chip">📺 The kitchen tablet</div>
-      <h3 class="mt-4 text-2xl sm:text-3xl font-bold">The always-on family scoreboard.</h3>
-      <p class="mt-4 text-slate-400">
-        Point a spare iPad or Android tablet at the family wall and pin
-        Chore Coin. Everyone can see today's chores, everyone's coins,
-        and what's coming up — no more "did you brush your teeth?"
-      </p>
+    <!-- PANEL: Savings goals -->
+    <div class="tab-panel" data-panel="goals">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="flex justify-center order-2 md:order-1">
+          <div class="phone" aria-hidden="true">
+            <div class="phone-screen">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-9 h-9 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-lg">👧</div>
+                  <div>
+                    <div class="text-sm font-semibold">Sam — savings goals</div>
+                    <div class="text-[10px] text-slate-500">3 active</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-base font-bold text-amber-300">62 🪙</div>
+                  <div class="text-[9px] text-slate-500">to spend</div>
+                </div>
+              </div>
+
+              <!-- Individual goal -->
+              <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-lg">🎮</span>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-slate-200 truncate">Nintendo Switch</div>
+                    <div class="text-[10px] text-slate-400">210 / 500 🪙</div>
+                  </div>
+                  <div class="text-xs text-slate-400">42%</div>
+                </div>
+                <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden mb-2">
+                  <div class="h-full bg-brand-500 rounded-full" style="width:42%"></div>
+                </div>
+                <div class="flex gap-1.5">
+                  <button class="flex-1 bg-brand-600 rounded-md py-1 text-[10px] font-medium">+1 🪙</button>
+                  <button class="flex-1 bg-brand-600 rounded-md py-1 text-[10px] font-medium">+5 🪙</button>
+                  <button class="flex-1 bg-brand-600 rounded-md py-1 text-[10px] font-medium">+10 🪙</button>
+                </div>
+              </div>
+
+              <!-- Family goal with match -->
+              <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-lg">✈️</span>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-slate-200 truncate">Disney trip</div>
+                    <div class="text-[10px] text-slate-400">180 saved + 360 match / 1000 🪙</div>
+                  </div>
+                  <div class="text-xs text-slate-400">54%</div>
+                </div>
+                <div class="flex items-center gap-1 mb-2">
+                  <span class="chip !py-0 !px-1.5 !text-[9px]">👨‍👩‍👧 Family</span>
+                  <span class="chip !py-0 !px-1.5 !text-[9px] !bg-emerald-500/20 !text-emerald-300 !border-emerald-500/30">2× parent match</span>
+                </div>
+                <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden mb-2">
+                  <div class="h-full bg-brand-500 rounded-full" style="width:54%"></div>
+                </div>
+                <div class="flex gap-1.5">
+                  <button class="flex-1 bg-brand-600 rounded-md py-1 text-[10px] font-medium">+1 🪙</button>
+                  <button class="flex-1 bg-brand-600 rounded-md py-1 text-[10px] font-medium">+5 🪙</button>
+                </div>
+              </div>
+
+              <!-- Almost done -->
+              <div class="bg-emerald-950/40 border border-emerald-800/50 rounded-xl p-3 mt-auto">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-lg">🏊</span>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-slate-200 truncate">Summer pool pass</div>
+                    <div class="text-[10px] text-emerald-300">90 / 100 🪙 — almost!</div>
+                  </div>
+                  <div class="text-xs text-emerald-300 font-medium">90%</div>
+                </div>
+                <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden mb-2">
+                  <div class="h-full bg-emerald-500 rounded-full" style="width:90%"></div>
+                </div>
+                <button class="w-full bg-emerald-600 rounded-md py-1 text-[10px] font-medium">+10 🪙 🎯 finish it</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="order-1 md:order-2">
+          <div class="chip">💰 Savings goals</div>
+          <h3 class="mt-4 text-2xl sm:text-3xl font-bold">Save for the bigger stuff.</h3>
+          <p class="mt-4 text-slate-300">
+            Some things are bigger than what a coin-a-day gets you. Kids can
+            save toward what they actually want — a new game, a pool pass, a
+            Disney trip the whole family is chasing. Set the coin target, pick
+            who's contributing (one kid or everyone), and watch the progress
+            bar fill up.
+          </p>
+          <p class="mt-4 text-slate-400 text-sm">
+            Want to give it a boost? Add a parent match — every coin the kid
+            puts in, you add half, or double, or triple. Perfect for family
+            trips where you're chipping in anyway. Turn on approval-required
+            for the big-ticket goals so a kid can't sink their whole balance
+            without you seeing it first.
+          </p>
+        </div>
+      </div>
     </div>
 
-    <div class="mt-10 flex justify-center">
-      <div class="tablet" aria-hidden="true">
-        <div class="tablet-screen">
-          <div class="flex items-center justify-between mb-2">
-            <div class="text-lg font-bold flex items-center gap-2">🪙 The Rivera family</div>
-            <div class="text-sm text-slate-400">Tuesday, Aug 12</div>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <!-- Alex tile -->
-            <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
-              <div class="flex items-center gap-3 mb-3">
-                <div class="w-12 h-12 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-2xl">👦</div>
-                <div>
-                  <div class="font-semibold">Alex</div>
-                  <div class="text-xs text-slate-500">age 11</div>
-                </div>
-                <div class="ml-auto text-right">
-                  <div class="text-2xl font-bold text-amber-300">47 🪙</div>
-                </div>
-              </div>
-              <div class="text-xs text-slate-400 mb-1.5">Today's chores</div>
-              <div class="h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
-                <div class="h-full bg-emerald-500 rounded-full" style="width:60%"></div>
-              </div>
-              <div class="text-xs text-slate-300">3 of 5 done · 40 min screen time earned</div>
+    <!-- PANEL: Family dashboard (tablet) -->
+    <div class="tab-panel" data-panel="dashboard">
+      <div class="text-center max-w-2xl mx-auto">
+        <div class="chip">📺 The kitchen tablet</div>
+        <h3 class="mt-4 text-2xl sm:text-3xl font-bold">The always-on family scoreboard.</h3>
+        <p class="mt-4 text-slate-400">
+          Point a spare iPad or Android tablet at the family wall and pin
+          Chore Coin. Everyone can see today's chores, everyone's coins,
+          and what's coming up — no more "did you brush your teeth?"
+        </p>
+      </div>
+
+      <div class="mt-10 flex justify-center">
+        <div class="tablet" aria-hidden="true">
+          <div class="tablet-screen">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-lg font-bold flex items-center gap-2">🪙 The Rivera family</div>
+              <div class="text-sm text-slate-400">Tuesday, Aug 12</div>
             </div>
-            <!-- Sam tile -->
-            <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
-              <div class="flex items-center gap-3 mb-3">
-                <div class="w-12 h-12 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-2xl">👧</div>
-                <div>
-                  <div class="font-semibold">Sam</div>
-                  <div class="text-xs text-slate-500">age 8</div>
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Alex tile -->
+              <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="w-12 h-12 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-2xl">👦</div>
+                  <div>
+                    <div class="font-semibold">Alex</div>
+                    <div class="text-xs text-slate-500">age 11</div>
+                  </div>
+                  <div class="ml-auto text-right">
+                    <div class="text-2xl font-bold text-amber-300">47 🪙</div>
+                  </div>
                 </div>
-                <div class="ml-auto text-right">
-                  <div class="text-2xl font-bold text-amber-300">22 🪙</div>
+                <div class="text-xs text-slate-400 mb-1.5">Today's chores</div>
+                <div class="h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+                  <div class="h-full bg-emerald-500 rounded-full" style="width:60%"></div>
                 </div>
+                <div class="text-xs text-slate-300">3 of 5 done · 40 min screen time earned</div>
               </div>
-              <div class="text-xs text-slate-400 mb-1.5">Today's chores</div>
-              <div class="h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
-                <div class="h-full bg-emerald-500 rounded-full" style="width:100%"></div>
+              <!-- Sam tile -->
+              <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="w-12 h-12 rounded-full bg-brand-600/40 border border-brand-400/40 flex items-center justify-center text-2xl">👧</div>
+                  <div>
+                    <div class="font-semibold">Sam</div>
+                    <div class="text-xs text-slate-500">age 8</div>
+                  </div>
+                  <div class="ml-auto text-right">
+                    <div class="text-2xl font-bold text-amber-300">22 🪙</div>
+                  </div>
+                </div>
+                <div class="text-xs text-slate-400 mb-1.5">Today's chores</div>
+                <div class="h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+                  <div class="h-full bg-emerald-500 rounded-full" style="width:100%"></div>
+                </div>
+                <div class="text-xs text-emerald-400">All 4 done! 60 min screen time earned 🎉</div>
               </div>
-              <div class="text-xs text-emerald-400">All 4 done! 60 min screen time earned 🎉</div>
             </div>
-          </div>
-          <div class="mt-2 bg-brand-950/40 border border-brand-800/50 rounded-xl px-4 py-3 text-xs text-brand-200 flex items-center gap-2">
-            <span class="text-lg">💡</span>
-            <span>Sam finished all chores today — first time this week!</span>
+            <div class="mt-2 bg-brand-950/40 border border-brand-800/50 rounded-xl px-4 py-3 text-xs text-brand-200 flex items-center gap-2">
+              <span class="text-lg">💡</span>
+              <span>Sam finished all chores today — first time this week!</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 
   <p class="mt-14 text-center text-sm text-slate-500 max-w-2xl mx-auto">
@@ -508,6 +651,16 @@
         Movie night, dinner-picker, that new book they've been eyeing —
         put anything on the reward menu with a coin price. Kids ask, you
         approve, done.
+      </p>
+    </div>
+
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+      <div class="text-3xl mb-3">💰</div>
+      <h3 class="font-semibold text-lg">Savings goals for bigger stuff</h3>
+      <p class="mt-2 text-sm text-slate-400">
+        A Nintendo, a pool pass, the family Disney trip. Kids save toward
+        what they actually want, with an optional parent match — you
+        chip in half a coin, or double, or triple, per coin they add.
       </p>
     </div>
 
@@ -951,6 +1104,19 @@ iwr -UseBasicParsing https://raw.githubusercontent.com/danielhemp/chore-coin/mai
   }
   function copyInstall()    { copyFromEl('install-cmd',     event.target) }
   function copyInstallWin() { copyFromEl('install-cmd-win', event.target) }
+
+  // Tour section tabs — swap the active tab-btn and matching tab-panel on click.
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.getAttribute('data-tab')
+      document.querySelectorAll('.tab-btn').forEach((b) => {
+        b.classList.toggle('active', b.getAttribute('data-tab') === target)
+      })
+      document.querySelectorAll('.tab-panel').forEach((p) => {
+        p.classList.toggle('active', p.getAttribute('data-panel') === target)
+      })
+    })
+  })
 </script>
 
 </body>
